@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guilda Pokémon - Meta 750</title>
+
+  <!-- Bloqueio de inspeção -->
+  <script>
+    document.addEventListener('contextmenu', e => { e.preventDefault(); alert('🚫 Acesso negado!'); });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) || (e.ctrlKey && (e.key === 'u' || e.key === 'U'))) {
+        e.preventDefault();
+        alert('🚫 Acesso negado!');
+        return false;
+      }
+    });
+    setInterval(function() {
+      const start = performance.now();
+      debugger;
+      if (performance.now() - start > 100) {
+        document.body.innerHTML = '<h1 style="color:red;text-align:center;margin-top:20%;">🚫 Acesso negado!</h1>';
+        alert('🚫 Acesso negado!');
+      }
+    }, 3000);
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
+  <!-- Chart.js para gráficos -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f2f4f8;
+      min-height: 100vh;
+      padding: 2rem 1.5rem;
+      color: #1e293b;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .header-pokemon {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.3rem;
+      flex-wrap: wrap;
+    }
+    .pokeball-icon {
+      display: inline-block;
+      width: 48px;
+      height: 48px;
+      background: radial-gradient(circle at 30% 30%, #fff, #e2e8f0);
+      border-radius: 50%;
+      border: 3px solid #1e293b;
+      position: relative;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .pokeball-icon::before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 50%;
+      background: #ef4444;
+      border-radius: 50% 50% 0 0;
+      top: 0;
+      left: 0;
+    }
+    .pokeball-icon::after {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-radius: 50%;
+      border: 3px solid #1e293b;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: inset 0 0 0 4px #ef4444;
+    }
+    h1 {
+      font-size: 2.4rem;
+      font-weight: 800;
+      color: #0f172a;
+      flex: 1;
+    }
+    h1 .subtitle {
+      font-weight: 400;
+      font-size: 1rem;
+      color: #475569;
+      display: block;
+      margin-top: 0.1rem;
+    }
+    .header-actions {
+      display: flex;
+      gap: 0.8rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .btn-pdf {
+      background: #ef4444;
+      color: #fff;
+      border: none;
+      padding: 0.6rem 1.4rem;
+      border-radius: 30px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: 0.2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .btn-pdf:hover {
+      background: #dc2626;
+      transform: scale(1.02);
+    }
+    .sub {
+      color: #475569;
+      margin-bottom: 2rem;
+      font-size: 1.1rem;
+      padding-left: 4px;
+    }
+    .sub strong {
+      background: #facc15;
+      color: #0f172a;
+      padding: 0.1rem 0.8rem;
+      border-radius: 30px;
+      font-weight: 700;
+    }
+
+    /* DASHBOARD CARDS (topo) */
+    .resumo {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+    .resumo-card {
+      border-radius: 24px;
+      padding: 1.4rem 1.8rem;
+      flex: 1;
+      min-width: 150px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+      text-align: center;
+      color: #fff;
+      transition: transform 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+    .resumo-card:hover { transform: translateY(-4px); }
+    .resumo-card .num {
+      font-size: 2.6rem;
+      font-weight: 800;
+      line-height: 1.2;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .resumo-card .label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      opacity: 0.95;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .resumo-card .mini-pokeball {
+      position: absolute;
+      right: -10px;
+      bottom: -10px;
+      font-size: 5rem;
+      opacity: 0.12;
+      color: #fff;
+    }
+    .card-vermelho { background: linear-gradient(135deg, #ef4444, #dc2626); }
+    .card-azul    { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+    .card-verde   { background: linear-gradient(135deg, #22c55e, #16a34a); }
+    .card-amarelo { background: linear-gradient(135deg, #facc15, #eab308); color: #0f172a; }
+    .card-amarelo .num { text-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .card-amarelo .mini-pokeball { color: #0f172a; }
+
+    /* Formulário */
+    .form-card {
+      background: #ffffff;
+      border-radius: 28px;
+      padding: 1.8rem 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+      border: 2px solid #e9edf2;
+    }
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: flex-end;
+    }
+    .form-group {
+      flex: 1;
+      min-width: 150px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #475569;
+      margin-bottom: 4px;
+    }
+    .form-group label i { color: #ef4444; margin-right: 4px; }
+    .form-group input {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      border-radius: 16px;
+      border: 2px solid #e2e8f0;
+      background: #f8fafc;
+      color: #0f172a;
+      font-size: 1rem;
+      font-family: inherit;
+      transition: border 0.2s;
+    }
+    .form-group input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      background: #fff;
+    }
+    .form-group input[readonly] {
+      background: #e9edf2;
+      color: #475569;
+      cursor: not-allowed;
+    }
+    .btn {
+      padding: 0.7rem 1.8rem;
+      border: none;
+      border-radius: 16px;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .btn-primary {
+      background: #ef4444;
+      color: #fff;
+    }
+    .btn-primary:hover {
+      background: #dc2626;
+      transform: scale(1.02);
+    }
+    .btn-edit {
+      background: #facc15;
+      color: #0f172a;
+      padding: 0.35rem 0.9rem;
+      font-size: 0.8rem;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: 0.15s;
+      font-weight: 700;
+    }
+    .btn-edit:hover { background: #eab308; }
+    .btn-excluir {
+      background: #ef4444;
+      color: #fff;
+      padding: 0.35rem 0.9rem;
+      font-size: 0.8rem;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+    .btn-excluir:hover { background: #dc2626; }
+
+    /* Tabela */
+    .table-wrapper {
+      background: #ffffff;
+      border-radius: 28px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+      border: 2px solid #e9edf2;
+      overflow-x: auto;
+      padding: 0 0.5rem 0.5rem 0.5rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+    th {
+      text-align: left;
+      padding: 1rem 0.8rem 0.6rem;
+      font-weight: 700;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 0.7rem;
+      border-bottom: 2px solid #e9edf2;
+    }
+    td {
+      padding: 0.8rem 0.8rem;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle;
+    }
+    tr:hover td { background: #f8fafc; }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0.3rem 1rem;
+      border-radius: 40px;
+      font-weight: 700;
+      font-size: 0.8rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+    .status-badge.aprovado {
+      background: #dcfce7;
+      color: #16a34a;
+    }
+    .status-badge.reprovado {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+    .acoes {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .empty-msg {
+      text-align: center;
+      padding: 2rem;
+      color: #94a3b8;
+    }
+    .total-destaque {
+      font-weight: 800;
+      color: #0f172a;
+      background: #f1f5f9;
+      padding: 0.1rem 0.6rem;
+      border-radius: 20px;
+    }
+
+    /* Dashboard interativo (gráficos) */
+    .dashboard-interativo {
+      margin-top: 2.5rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+    .chart-card {
+      background: #ffffff;
+      border-radius: 28px;
+      padding: 1.5rem 1.2rem 1.2rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+      border: 2px solid #e9edf2;
+      transition: 0.15s;
+    }
+    .chart-card:hover { border-color: #facc15; }
+    .chart-card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .chart-card h3 i { color: #ef4444; }
+    .chart-wrapper {
+      position: relative;
+      height: 200px;
+    }
+    .chart-wrapper canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 2.5rem;
+      padding: 1.5rem 0 0.5rem;
+      text-align: center;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      border-top: 1px solid #e9edf2;
+      line-height: 1.6;
+    }
+
+    #pdfContent { display: none; }
+
+    @media (max-width: 700px) {
+      .form-row { flex-direction: column; align-items: stretch; }
+      .resumo { flex-direction: column; gap: 0.8rem; }
+      .resumo-card { min-width: unset; }
+      table { font-size: 0.8rem; }
+      td, th { padding: 0.5rem 0.4rem; }
+      .header-pokemon h1 { font-size: 1.8rem; }
+      .pokeball-icon { width: 40px; height: 40px; }
+      .dashboard-interativo { grid-template-columns: 1fr; }
+      .chart-wrapper { height: 180px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Cabeçalho -->
+  <div class="header-pokemon">
+    <div class="pokeball-icon"></div>
+    <h1>
+      Gerenciador da Guilda
+      <span class="subtitle"><i class="fas fa-bolt" style="color:#facc15;"></i> Meta diária: <strong style="background:#facc15; padding:0 8px; border-radius:20px;">750 pontos</strong></span>
+    </h1>
+    <div class="header-actions">
+      <button class="btn-pdf" id="btnPDF"><i class="fas fa-file-pdf"></i> Baixar PDF</button>
+    </div>
+  </div>
+  <p class="sub">
+    <i class="fas fa-flag-checkered" style="color:#ef4444;"></i> A contribuição de hoje é calculada pela diferença entre o total atual e o total anterior.
+  </p>
+
+  <!-- DASHBOARD TOPO (cards) -->
+  <div class="resumo">
+    <div class="resumo-card card-vermelho">
+      <div class="mini-pokeball">⚪</div>
+      <div class="num" id="totalPlayers">0</div>
+      <div class="label">Total de Treinadores</div>
+    </div>
+    <div class="resumo-card card-verde">
+      <div class="mini-pokeball">⚪</div>
+      <div class="num" id="bateramHoje">0</div>
+      <div class="label">Bateram hoje 🏆</div>
+    </div>
+    <div class="resumo-card card-amarelo">
+      <div class="mini-pokeball">⚪</div>
+      <div class="num" id="naoBateramHoje">0</div>
+      <div class="label">Não bateram hoje 😢</div>
+    </div>
+    <div class="resumo-card card-azul">
+      <div class="mini-pokeball">⚪</div>
+      <div class="num" id="totalPontos">0</div>
+      <div class="label">Total acumulado</div>
+    </div>
+  </div>
+
+  <!-- Formulário -->
+  <div class="form-card">
+    <form id="playerForm">
+      <div class="form-row">
+        <div class="form-group">
+          <label><i class="fas fa-user"></i> Nick do Treinador</label>
+          <input type="text" id="nick" placeholder="Ex: Ash" required />
+        </div>
+        <div class="form-group">
+          <label><i class="fas fa-database"></i> Total anterior</label>
+          <input type="number" id="totalAnterior" readonly />
+        </div>
+        <div class="form-group">
+          <label><i class="fas fa-arrow-up"></i> Total atual</label>
+          <input type="number" id="totalAtual" placeholder="Ex: 10820" required min="0" step="1" />
+        </div>
+        <div class="form-group" style="flex: 0 0 auto; min-width: 130px;">
+          <button type="submit" class="btn btn-primary" id="submitBtn">
+            <i class="fas fa-plus"></i> Adicionar
+          </button>
+        </div>
+      </div>
+      <div id="contribDisplay" style="margin-top: 10px; font-weight: 600; color: #2563eb; display: none;">
+        Contribuição de hoje: <span id="contribCalculada">0</span> pontos
+      </div>
+      <input type="hidden" id="editIndex" value="-1" />
+    </form>
+  </div>
+
+  <!-- Tabela -->
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Treinador</th>
+          <th>Total acumulado</th>
+          <th>Contribuição hoje</th>
+          <th>Status Hoje</th>
+          <th style="text-align: center;">Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr><td colspan="5" class="empty-msg">Nenhum treinador cadastrado ainda. Adicione o primeiro!</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ========== DASHBOARD INTERATIVO (GRÁFICOS) ========== -->
+  <div class="dashboard-interativo">
+    <div class="chart-card">
+      <h3><i class="fas fa-chart-pie"></i> Desempenho hoje</h3>
+      <div class="chart-wrapper">
+        <canvas id="pieChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3><i class="fas fa-chart-bar"></i> Contribuição hoje (por membro)</h3>
+      <div class="chart-wrapper">
+        <canvas id="barChartContrib"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3><i class="fas fa-chart-bar"></i> Total acumulado (por membro)</h3>
+      <div class="chart-wrapper">
+        <canvas id="barChartTotal"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <p>
+      <i class="fas fa-info-circle" style="margin-right: 6px;"></i>
+      Este site é um gerenciador de guildas não oficial e não possui nenhum vínculo de afiliação com a Nintendo, Pokémon, IdleDex ou qualquer outra marca relacionada. Todos os direitos pertencem aos seus respectivos proprietários.
+    </p>
+  </div>
+
+</div>
+
+<!-- PDF oculto -->
+<div id="pdfContent">
+  <div style="font-family: 'Inter', sans-serif; padding: 30px; max-width: 800px; margin: 0 auto;">
+    <h1 style="color: #ef4444; font-size: 28px; display: flex; align-items: center; gap: 10px;">
+      <span>📄 Relatório de Meta Não Batida</span>
+    </h1>
+    <p style="font-size: 16px; color: #475569; margin-bottom: 20px;">
+      Data: <strong id="pdfData"></strong>
+    </p>
+    <div id="pdfLista" style="margin-top: 20px;"></div>
+    <hr style="margin: 30px 0; border: 1px solid #e9edf2;" />
+    <p style="font-size: 14px; color: #94a3b8; text-align: center;">
+      Gerado automaticamente pelo Gerenciador da Guilda Pokémon.
+    </p>
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  //  DADOS
+  // ============================================================
+  const META = 750;
+  let players = [];
+  let chartPie, chartBarContrib, chartBarTotal;
+
+  function loadData() {
+    const stored = localStorage.getItem('guildaPokemon');
+    if (stored) {
+      try { players = JSON.parse(stored); } catch(e) { players = []; }
+    } else {
+      players = [
+        { nick: 'Ash', total: 10820, contrib: 820 },
+        { nick: 'Misty', total: 9410, contrib: 910 },
+        { nick: 'Brock', total: 12650, contrib: 650 }
+      ];
+    }
+    players.forEach(p => {
+      if (p.total === undefined) p.total = 0;
+      if (p.contrib === undefined) p.contrib = 0;
+    });
+    saveData();
+  }
+
+  function saveData() {
+    localStorage.setItem('guildaPokemon', JSON.stringify(players));
+  }
+
+  function formatarNumero(num) {
+    return num.toLocaleString('pt-BR');
+  }
+
+  // ============================================================
+  //  RENDER (inclui atualização de gráficos)
+  // ============================================================
+  function render() {
+    const tbody = document.getElementById('tableBody');
+    const total = players.length;
+    const bateu = players.filter(p => p.contrib >= META).length;
+    const naoBateu = total - bateu;
+    const totalPontos = players.reduce((acc, p) => acc + p.total, 0);
+
+    document.getElementById('totalPlayers').textContent = total;
+    document.getElementById('bateramHoje').textContent = bateu;
+    document.getElementById('naoBateramHoje').textContent = naoBateu;
+    document.getElementById('totalPontos').textContent = formatarNumero(totalPontos);
+
+    if (total === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" class="empty-msg">Nenhum treinador cadastrado ainda. Adicione o primeiro!</td></tr>`;
+    } else {
+      let html = '';
+      players.forEach((p, index) => {
+        const bateuHoje = p.contrib >= META;
+        html += `
+          <tr>
+            <td><strong>${p.nick}</strong></td>
+            <td><span class="total-destaque">${formatarNumero(p.total)}</span></td>
+            <td><strong>${p.contrib}</strong></td>
+            <td>${renderStatus(bateuHoje)}</td>
+            <td style="text-align: center;">
+              <div class="acoes">
+                <button class="btn-edit" data-index="${index}"><i class="fas fa-pen"></i> Editar</button>
+                <button class="btn-excluir" data-index="${index}"><i class="fas fa-trash"></i> Excluir</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    // Atualiza gráficos
+    atualizarGraficos();
+
+    // Eventos dos botões
+    tbody.querySelectorAll('.btn-edit').forEach(btn => {
+      btn.addEventListener('click', function() {
+        editarPlayer(parseInt(this.dataset.index, 10));
+      });
+    });
+    tbody.querySelectorAll('.btn-excluir').forEach(btn => {
+      btn.addEventListener('click', function() {
+        excluirPlayer(parseInt(this.dataset.index, 10));
+      });
+    });
+  }
+
+  function renderStatus(bateu) {
+    if (bateu) {
+      return `<span class="status-badge aprovado">✔ Meta batida! 🏆</span>`;
+    } else {
+      return `<span class="status-badge reprovado">✖ Não bateu 😢</span>`;
+    }
+  }
+
+  // ============================================================
+  //  GRÁFICOS
+  // ============================================================
+  function inicializarGraficos() {
+    const ctxPie = document.getElementById('pieChart').getContext('2d');
+    const ctxBarContrib = document.getElementById('barChartContrib').getContext('2d');
+    const ctxBarTotal = document.getElementById('barChartTotal').getContext('2d');
+
+    chartPie = new Chart(ctxPie, {
+      type: 'pie',
+      data: {
+        labels: ['Bateram meta', 'Não bateram'],
+        datasets: [{
+          data: [0, 0],
+          backgroundColor: ['#22c55e', '#facc15'],
+          borderColor: '#fff',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom' }
+        }
+      }
+    });
+
+    chartBarContrib = new Chart(ctxBarContrib, {
+      type: 'bar',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'Contribuição hoje',
+          data: [],
+          backgroundColor: '#3b82f6',
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+
+    chartBarTotal = new Chart(ctxBarTotal, {
+      type: 'bar',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'Total acumulado',
+          data: [],
+          backgroundColor: '#8b5cf6',
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  function atualizarGraficos() {
+    if (!chartPie || !chartBarContrib || !chartBarTotal) return;
+
+    const bateu = players.filter(p => p.contrib >= META).length;
+    const naoBateu = players.length - bateu;
+
+    // Pizza
+    chartPie.data.datasets[0].data = [bateu, naoBateu];
+    chartPie.update();
+
+    // Barras - contribuição hoje
+    const nomes = players.map(p => p.nick);
+    const contribs = players.map(p => p.contrib);
+    chartBarContrib.data.labels = nomes;
+    chartBarContrib.data.datasets[0].data = contribs;
+    chartBarContrib.update();
+
+    // Barras - total acumulado
+    const totais = players.map(p => p.total);
+    chartBarTotal.data.labels = nomes;
+    chartBarTotal.data.datasets[0].data = totais;
+    chartBarTotal.update();
+  }
+
+  // ============================================================
+  //  CRUD
+  // ============================================================
+  function adicionarPlayer(nick, totalAtual) {
+    if (players.some(p => p.nick.toLowerCase() === nick.toLowerCase())) {
+      alert('Esse treinador já está na lista! Use "Editar".');
+      return false;
+    }
+    players.push({
+      nick: nick.trim(),
+      total: totalAtual,
+      contrib: totalAtual
+    });
+    saveData();
+    render();
+    return true;
+  }
+
+  function editarPlayer(index) {
+    const p = players[index];
+    document.getElementById('nick').value = p.nick;
+    document.getElementById('totalAnterior').value = p.total;
+    document.getElementById('totalAtual').value = p.total;
+    document.getElementById('editIndex').value = index;
+    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> Salvar';
+    calcularContribuicao();
+    document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function salvarEdicao(index, nick, totalAtual) {
+    const exists = players.some((p, i) => i !== index && p.nick.toLowerCase() === nick.toLowerCase());
+    if (exists) {
+      alert('Esse nick já está em outro treinador.');
+      return false;
+    }
+    const totalAnterior = players[index].total;
+    const contrib = totalAtual - totalAnterior;
+    if (contrib < 0) {
+      alert('O total atual não pode ser menor que o total anterior.');
+      return false;
+    }
+    players[index] = {
+      nick: nick.trim(),
+      total: totalAtual,
+      contrib: contrib
+    };
+    saveData();
+    render();
+    resetForm();
+    return true;
+  }
+
+  function excluirPlayer(index) {
+    if (confirm(`Remover "${players[index].nick}" da guilda?`)) {
+      players.splice(index, 1);
+      saveData();
+      render();
+      if (document.getElementById('editIndex').value !== '-1') resetForm();
+    }
+  }
+
+  function resetForm() {
+    document.getElementById('playerForm').reset();
+    document.getElementById('totalAnterior').value = '';
+    document.getElementById('editIndex').value = '-1';
+    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-plus"></i> Adicionar';
+    document.getElementById('contribDisplay').style.display = 'none';
+  }
+
+  // ============================================================
+  //  CÁLCULO DA CONTRIBUIÇÃO (tempo real)
+  // ============================================================
+  function calcularContribuicao() {
+    const totalAnterior = parseFloat(document.getElementById('totalAnterior').value) || 0;
+    const totalAtual = parseFloat(document.getElementById('totalAtual').value);
+    if (!isNaN(totalAtual) && totalAtual >= 0) {
+      const contrib = totalAtual - totalAnterior;
+      document.getElementById('contribCalculada').textContent = contrib >= 0 ? contrib : 0;
+      document.getElementById('contribDisplay').style.display = 'block';
+      if (contrib < 0) {
+        document.getElementById('contribCalculada').style.color = 'red';
+      } else {
+        document.getElementById('contribCalculada').style.color = '#2563eb';
+      }
+    } else {
+      document.getElementById('contribDisplay').style.display = 'none';
+    }
+  }
+
+  // ============================================================
+  //  PDF
+  // ============================================================
+  function gerarPDF() {
+    const hoje = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    document.getElementById('pdfData').textContent = hoje;
+
+    const naoBateram = players.filter(p => p.contrib < META);
+    const listaDiv = document.getElementById('pdfLista');
+
+    if (naoBateram.length === 0) {
+      listaDiv.innerHTML = `<p style="font-size: 18px; color: #16a34a;">🎉 Parabéns! Todos os membros bateram a meta hoje!</p>`;
+    } else {
+      let html = `<h3 style="font-size: 18px; color: #dc2626;">⚠️ ${naoBateram.length} treinador(es) NÃO bateram a meta de ${META} pontos hoje:</h3>
+                  <ul style="list-style: none; padding: 0; margin-top: 15px;">`;
+      naoBateram.forEach(p => {
+        html += `<li style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; font-size: 15px;">
+                  <span><strong>${p.nick}</strong></span>
+                  <span>Total acumulado: ${formatarNumero(p.total)}</span>
+                  <span style="color: #dc2626; font-weight: 700;">${p.contrib} pontos (hoje)</span>
+                </li>`;
+      });
+      html += `</ul>`;
+      listaDiv.innerHTML = html;
+    }
+
+    const pdfElement = document.getElementById('pdfContent');
+    pdfElement.style.display = 'block';
+
+    const opt = {
+      margin:        [0.5, 0.5, 0.5, 0.5],
+      filename:     `relatorio_meta_${hoje.replace(/\//g, '-')}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, letterRendering: true },
+      jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(pdfElement).save().then(() => {
+      pdfElement.style.display = 'none';
+    });
+  }
+
+  // ============================================================
+  //  EVENTOS
+  // ============================================================
+  document.getElementById('playerForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const nick = document.getElementById('nick').value.trim();
+    const totalAtual = document.getElementById('totalAtual').value;
+    const editIndex = parseInt(document.getElementById('editIndex').value, 10);
+
+    if (!nick) return alert('Digite o nick do treinador.');
+    if (totalAtual === '') return alert('Digite o total atual.');
+    if (isNaN(totalAtual) || Number(totalAtual) < 0) {
+      return alert('Total atual deve ser um número válido (0 ou mais).');
+    }
+
+    const totalNum = Number(totalAtual);
+
+    if (editIndex >= 0) {
+      salvarEdicao(editIndex, nick, totalNum);
+    } else {
+      if (adicionarPlayer(nick, totalNum)) this.reset();
+    }
+  });
+
+  document.getElementById('playerForm').addEventListener('reset', resetForm);
+  document.getElementById('totalAtual').addEventListener('input', calcularContribuicao);
+  document.getElementById('btnPDF').addEventListener('click', gerarPDF);
+
+  // ============================================================
+  //  INICIALIZAÇÃO
+  // ============================================================
+  loadData();
+  // Inicializa gráficos após carregar a página
+  document.addEventListener('DOMContentLoaded', function() {
+    inicializarGraficos();
+    render();
+  });
+  // Se o DOM já estiver carregado, chama diretamente
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    inicializarGraficos();
+    render();
+  }
+</script>
+
+</body>
+</html>
