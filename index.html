@@ -5,32 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Guilda Anomalia - Meta 750</title>
 
-  <!-- Bloqueio de inspeção -->
-  <script>
-    document.addEventListener('contextmenu', e => { e.preventDefault(); alert('🚫 Acesso negado!'); });
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) || (e.ctrlKey && (e.key === 'u' || e.key === 'U'))) {
-        e.preventDefault();
-        alert('🚫 Acesso negado!');
-        return false;
-      }
-    });
-    setInterval(function() {
-      const start = performance.now();
-      debugger;
-      if (performance.now() - start > 100) {
-        document.body.innerHTML = '<h1 style="color:red;text-align:center;margin-top:20%;">🚫 Acesso negado!</h1>';
-        alert('🚫 Acesso negado!');
-      }
-    }, 3000);
-  </script>
-
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
-  <!-- Chart.js para gráficos -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
 
   <style>
@@ -42,144 +21,48 @@
       padding: 2rem 1.5rem;
       color: #1e293b;
     }
-    .container {
-      max-width: 1100px;
-      margin: 0 auto;
-    }
-    .header-pokemon {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      margin-bottom: 0.3rem;
-      flex-wrap: wrap;
-    }
+    .container { max-width: 1100px; margin: 0 auto; }
+
+    .header-pokemon { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.3rem; flex-wrap: wrap; }
     .pokeball-icon {
-      display: inline-block;
-      width: 48px;
-      height: 48px;
+      display: inline-block; width: 48px; height: 48px;
       background: radial-gradient(circle at 30% 30%, #fff, #e2e8f0);
-      border-radius: 50%;
-      border: 3px solid #1e293b;
-      position: relative;
-      flex-shrink: 0;
+      border-radius: 50%; border: 3px solid #1e293b; position: relative; flex-shrink: 0;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
     .pokeball-icon::before {
-      content: '';
-      position: absolute;
-      width: 100%;
-      height: 50%;
-      background: #ef4444;
-      border-radius: 50% 50% 0 0;
-      top: 0;
-      left: 0;
+      content: ''; position: absolute; width: 100%; height: 50%;
+      background: #ef4444; border-radius: 50% 50% 0 0; top: 0; left: 0;
     }
     .pokeball-icon::after {
-      content: '';
-      position: absolute;
-      width: 16px;
-      height: 16px;
-      background: #fff;
-      border-radius: 50%;
-      border: 3px solid #1e293b;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      box-shadow: inset 0 0 0 4px #ef4444;
+      content: ''; position: absolute; width: 16px; height: 16px; background: #fff;
+      border-radius: 50%; border: 3px solid #1e293b; top: 50%; left: 50%;
+      transform: translate(-50%, -50%); box-shadow: inset 0 0 0 4px #ef4444;
     }
-    h1 {
-      font-size: 2.4rem;
-      font-weight: 800;
-      color: #0f172a;
-      flex: 1;
+    h1 { font-size: 2.4rem; font-weight: 800; color: #0f172a; flex: 1; }
+    h1 .subtitle { font-weight: 400; font-size: 1rem; color: #475569; display: block; margin-top: 0.1rem; }
+    .header-actions { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+    .btn-nova-rodada {
+      background: #8b5cf6; color: #fff; border: none; padding: 0.6rem 1.4rem;
+      border-radius: 30px; font-weight: 700; font-size: 0.9rem; cursor: pointer;
+      transition: 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      display: inline-flex; align-items: center; gap: 0.5rem; font-family: inherit;
     }
-    h1 .subtitle {
-      font-weight: 400;
-      font-size: 1rem;
-      color: #475569;
-      display: block;
-      margin-top: 0.1rem;
-    }
-    .header-actions {
-      display: flex;
-      gap: 0.8rem;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    .btn-pdf {
-      background: #ef4444;
-      color: #fff;
-      border: none;
-      padding: 0.6rem 1.4rem;
-      border-radius: 30px;
-      font-weight: 700;
-      font-size: 0.9rem;
-      cursor: pointer;
-      transition: 0.2s;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .btn-pdf:hover {
-      background: #dc2626;
-      transform: scale(1.02);
-    }
-    .sub {
-      color: #475569;
-      margin-bottom: 2rem;
-      font-size: 1.1rem;
-      padding-left: 4px;
-    }
-    .sub strong {
-      background: #facc15;
-      color: #0f172a;
-      padding: 0.1rem 0.8rem;
-      border-radius: 30px;
-      font-weight: 700;
-    }
+    .btn-nova-rodada:hover { background: #7c3aed; transform: scale(1.02); }
 
-    /* DASHBOARD CARDS (topo) */
-    .resumo {
-      display: flex;
-      gap: 1.5rem;
-      flex-wrap: wrap;
-      margin-bottom: 2rem;
-    }
+    .sub { color: #475569; margin-bottom: 2rem; font-size: 1.1rem; padding-left: 4px; }
+    .sub strong { background: #facc15; color: #0f172a; padding: 0.1rem 0.8rem; border-radius: 30px; font-weight: 700; }
+
+    .resumo { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 2rem; }
     .resumo-card {
-      border-radius: 24px;
-      padding: 1.4rem 1.8rem;
-      flex: 1;
-      min-width: 150px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-      text-align: center;
-      color: #fff;
-      transition: transform 0.15s;
-      position: relative;
-      overflow: hidden;
+      border-radius: 24px; padding: 1.4rem 1.8rem; flex: 1; min-width: 150px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08); text-align: center; color: #fff;
+      transition: transform 0.15s; position: relative; overflow: hidden;
     }
     .resumo-card:hover { transform: translateY(-4px); }
-    .resumo-card .num {
-      font-size: 2.6rem;
-      font-weight: 800;
-      line-height: 1.2;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .resumo-card .label {
-      font-size: 0.8rem;
-      font-weight: 600;
-      opacity: 0.95;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-    .resumo-card .mini-pokeball {
-      position: absolute;
-      right: -10px;
-      bottom: -10px;
-      font-size: 5rem;
-      opacity: 0.12;
-      color: #fff;
-    }
+    .resumo-card .num { font-size: 2.6rem; font-weight: 800; line-height: 1.2; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .resumo-card .label { font-size: 0.8rem; font-weight: 600; opacity: 0.95; text-transform: uppercase; letter-spacing: 0.04em; }
+    .resumo-card .mini-pokeball { position: absolute; right: -10px; bottom: -10px; font-size: 5rem; opacity: 0.12; color: #fff; }
     .card-vermelho { background: linear-gradient(135deg, #ef4444, #dc2626); }
     .card-azul    { background: linear-gradient(135deg, #3b82f6, #2563eb); }
     .card-verde   { background: linear-gradient(135deg, #22c55e, #16a34a); }
@@ -187,216 +70,245 @@
     .card-amarelo .num { text-shadow: 0 2px 4px rgba(0,0,0,0.05); }
     .card-amarelo .mini-pokeball { color: #0f172a; }
 
-    /* Formulário */
-    .form-card {
-      background: #ffffff;
-      border-radius: 28px;
-      padding: 1.8rem 2rem;
-      margin-bottom: 2rem;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-      border: 2px solid #e9edf2;
+    .form-card, .gemini-card {
+      background: #ffffff; border-radius: 28px; padding: 1.8rem 2rem; margin-bottom: 2rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 2px solid #e9edf2;
     }
-    .form-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      align-items: flex-end;
-    }
-    .form-group {
-      flex: 1;
-      min-width: 150px;
-    }
+    .form-row { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; }
+    .form-group { flex: 1; min-width: 150px; }
     .form-group label {
-      display: block;
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: #475569;
-      margin-bottom: 4px;
+      display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.04em; color: #475569; margin-bottom: 4px;
     }
     .form-group label i { color: #ef4444; margin-right: 4px; }
-    .form-group input {
-      width: 100%;
-      padding: 0.7rem 1rem;
-      border-radius: 16px;
-      border: 2px solid #e2e8f0;
-      background: #f8fafc;
-      color: #0f172a;
-      font-size: 1rem;
-      font-family: inherit;
-      transition: border 0.2s;
+    .form-group input, .form-group select {
+      width: 100%; padding: 0.7rem 1rem; border-radius: 16px; border: 2px solid #e2e8f0;
+      background: #f8fafc; color: #0f172a; font-size: 1rem; font-family: inherit; transition: border 0.2s;
     }
-    .form-group input:focus {
-      outline: none;
-      border-color: #3b82f6;
-      background: #fff;
-    }
-    .form-group input[readonly] {
-      background: #e9edf2;
-      color: #475569;
-      cursor: not-allowed;
-    }
+    .form-group input:focus, .form-group select:focus { outline: none; border-color: #3b82f6; background: #fff; }
+    .form-group input[readonly] { background: #e9edf2; color: #475569; cursor: not-allowed; }
+
     .btn {
-      padding: 0.7rem 1.8rem;
-      border: none;
-      border-radius: 16px;
-      font-weight: 700;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-family: inherit;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      padding: 0.7rem 1.8rem; border: none; border-radius: 16px; font-weight: 700;
+      font-size: 1rem; cursor: pointer; transition: all 0.2s; font-family: inherit;
+      display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
-    .btn-primary {
-      background: #ef4444;
-      color: #fff;
-    }
-    .btn-primary:hover {
-      background: #dc2626;
-      transform: scale(1.02);
-    }
+    .btn-primary { background: #ef4444; color: #fff; }
+    .btn-primary:hover { background: #dc2626; transform: scale(1.02); }
+    .btn-azul { background: #3b82f6; color: #fff; }
+    .btn-azul:hover { background: #2563eb; }
+    .btn-verde { background: #22c55e; color: #fff; }
+    .btn-verde:hover { background: #16a34a; }
+    .btn-ghost { background: #f1f5f9; color: #475569; }
+    .btn-ghost:hover { background: #e2e8f0; }
     .btn-edit {
-      background: #facc15;
-      color: #0f172a;
-      padding: 0.35rem 0.9rem;
-      font-size: 0.8rem;
-      border-radius: 12px;
-      border: none;
-      cursor: pointer;
-      transition: 0.15s;
-      font-weight: 700;
+      background: #facc15; color: #0f172a; padding: 0.35rem 0.9rem; font-size: 0.8rem;
+      border-radius: 12px; border: none; cursor: pointer; transition: 0.15s; font-weight: 700;
     }
     .btn-edit:hover { background: #eab308; }
     .btn-excluir {
-      background: #ef4444;
-      color: #fff;
-      padding: 0.35rem 0.9rem;
-      font-size: 0.8rem;
-      border-radius: 12px;
-      border: none;
-      cursor: pointer;
-      transition: 0.15s;
+      background: #ef4444; color: #fff; padding: 0.35rem 0.9rem; font-size: 0.8rem;
+      border-radius: 12px; border: none; cursor: pointer; transition: 0.15s;
     }
     .btn-excluir:hover { background: #dc2626; }
 
-    /* Tabela */
-    .table-wrapper {
-      background: #ffffff;
-      border-radius: 28px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-      border: 2px solid #e9edf2;
-      overflow-x: auto;
-      padding: 0 0.5rem 0.5rem 0.5rem;
+    .gemini-card {
+      background: linear-gradient(160deg, #ffffff 0%, #f7f9ff 100%);
+      border: 2px solid #dbeafe;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.95rem;
+    .gemini-head { display: flex; align-items: center; gap: 0.7rem; margin-bottom: 1.2rem; flex-wrap: wrap; }
+    .gemini-head h3 {
+      font-size: 1.15rem; font-weight: 800; color: #0f172a;
+      display: flex; align-items: center; gap: 0.55rem;
     }
-    th {
-      text-align: left;
-      padding: 1rem 0.8rem 0.6rem;
-      font-weight: 700;
-      color: #475569;
+    .gemini-head h3 i { color: #3b82f6; }
+    .gemini-badge {
+      background: #dbeafe; color: #1d4ed8; font-size: 0.65rem; font-weight: 800;
+      padding: 0.2rem 0.65rem; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .gemini-config { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; margin-bottom: 1.2rem; }
+    .key-status { font-size: 0.78rem; font-weight: 700; padding: 0.35rem 0.8rem; border-radius: 20px; white-space: nowrap; }
+    .key-status.ok { background: #dcfce7; color: #16a34a; }
+    .key-status.no { background: #fee2e2; color: #dc2626; }
+
+    .btn-ler-gigante {
+      display: flex; align-items: center; justify-content: center; gap: 0.9rem;
+      width: 100%; padding: 1.6rem 2rem;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: #fff; border: none; border-radius: 24px;
+      font-family: inherit; font-size: 1.35rem; font-weight: 800; letter-spacing: 0.02em;
+      cursor: pointer; transition: all 0.2s;
+      box-shadow: 0 8px 24px rgba(34,197,94,0.4);
+      animation: pulseVerde 2s ease-in-out infinite;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
-      font-size: 0.7rem;
-      border-bottom: 2px solid #e9edf2;
     }
-    td {
-      padding: 0.8rem 0.8rem;
-      border-bottom: 1px solid #f1f5f9;
-      vertical-align: middle;
+    .btn-ler-gigante:hover {
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      transform: translateY(-2px) scale(1.01);
+      box-shadow: 0 12px 30px rgba(22,163,74,0.55);
     }
-    tr:hover td { background: #f8fafc; }
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 0.3rem 1rem;
-      border-radius: 40px;
-      font-weight: 700;
-      font-size: 0.8rem;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    .btn-ler-gigante:active { transform: translateY(0) scale(0.99); }
+    .btn-ler-gigante i { font-size: 1.8rem; }
+    .btn-ler-gigante small {
+      display: block; font-size: 0.7rem; font-weight: 600; opacity: 0.9;
+      text-transform: none; letter-spacing: 0; margin-top: 0.15rem;
     }
-    .status-badge.aprovado {
-      background: #dcfce7;
-      color: #16a34a;
-    }
-    .status-badge.reprovado {
-      background: #fee2e2;
-      color: #dc2626;
-    }
-    .acoes {
-      display: flex;
-      gap: 0.4rem;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    .empty-msg {
-      text-align: center;
-      padding: 2rem;
-      color: #94a3b8;
-    }
-    .total-destaque {
-      font-weight: 800;
-      color: #0f172a;
-      background: #f1f5f9;
-      padding: 0.1rem 0.6rem;
-      border-radius: 20px;
+    @keyframes pulseVerde {
+      0%, 100% { box-shadow: 0 8px 24px rgba(34,197,94,0.4); }
+      50%      { box-shadow: 0 8px 34px rgba(34,197,94,0.75); }
     }
 
-    /* Dashboard interativo (gráficos) */
+    .progresso { margin-top: 1.2rem; }
+    .prog-item {
+      display: flex; align-items: center; gap: 0.8rem; padding: 0.7rem 0.9rem;
+      background: #f8fafc; border-radius: 14px; margin-bottom: 0.5rem; font-size: 0.88rem;
+      border: 1px solid #e9edf2;
+    }
+    .prog-item .thumb {
+      width: 48px; height: 48px; border-radius: 10px; object-fit: cover;
+      border: 2px solid #e2e8f0; flex-shrink: 0;
+    }
+    .prog-item .txt { flex: 1; color: #334155; }
+    .prog-item .txt b { color: #0f172a; }
+    .spin {
+      width: 20px; height: 20px; border: 3px solid #dbeafe; border-top-color: #3b82f6;
+      border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .ok-ico { color: #22c55e; font-size: 1.3rem; }
+    .err-ico { color: #ef4444; font-size: 1.3rem; }
+
+    .resultado-panel {
+      margin-top: 1.4rem; background: #fff;
+      border: 2px solid #e9edf2; border-radius: 20px; padding: 1.2rem;
+    }
+    .resultado-panel h4 {
+      font-size: 1rem; font-weight: 800; color: #0f172a;
+      margin-bottom: 1rem; display: flex; align-items: center; gap: 0.55rem;
+    }
+    .resultado-panel h4 i { color: #f59e0b; }
+
+    .res-item {
+      background: #f8fafc; border: 2px solid #e9edf2; border-radius: 14px;
+      padding: 0.85rem 0.95rem; margin-bottom: 0.6rem; transition: 0.15s;
+    }
+    .res-item:hover { border-color: #bfdbfe; }
+    .res-item-top {
+      display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; margin-bottom: 0.6rem;
+    }
+    .res-item .res-thumb {
+      width: 52px; height: 52px; border-radius: 12px; object-fit: cover;
+      border: 2px solid #e2e8f0; flex-shrink: 0;
+    }
+    .res-item input[type="text"], .res-item input[type="number"] {
+      padding: 0.55rem 0.8rem; border-radius: 12px; border: 2px solid #e2e8f0;
+      background: #fff; font-family: inherit; font-size: 0.95rem; color: #0f172a;
+      font-weight: 600;
+    }
+    .res-item input[type="text"] { flex: 1; min-width: 130px; }
+    .res-item input[type="number"] { width: 140px; }
+    .res-item input:focus { outline: none; border-color: #3b82f6; }
+    .res-info {
+      font-size: 0.75rem; font-weight: 800; padding: 0.35rem 0.75rem;
+      border-radius: 20px; white-space: nowrap; text-transform: uppercase;
+    }
+    .res-info.ok   { background: #dcfce7; color: #16a34a; }
+    .res-info.no   { background: #fee2e2; color: #dc2626; }
+    .res-info.novo { background: #dbeafe; color: #1d4ed8; }
+    .res-calc {
+      display: flex; gap: 0.8rem; flex-wrap: wrap; align-items: center;
+      padding-top: 0.5rem; border-top: 1px dashed #e2e8f0;
+      font-size: 0.82rem; font-weight: 700; color: #475569;
+    }
+    .res-calc .chip {
+      padding: 0.25rem 0.7rem; border-radius: 20px;
+      background: #f1f5f9; color: #334155;
+    }
+    .res-calc .chip.ant { background: #e0e7ff; color: #3730a3; }
+    .res-calc .chip.novo2 { background: #fef3c7; color: #92400e; }
+    .res-calc .chip.diff { background: #dcfce7; color: #166534; }
+    .res-calc .chip.diff.neg { background: #fee2e2; color: #991b1b; }
+    .res-calc .chip.total-hoje { background: #dbeafe; color: #1e40af; }
+
+    .res-actions { display: flex; gap: 0.7rem; margin-top: 1.2rem; flex-wrap: wrap; }
+    .res-actions .btn-verde { flex: 1; justify-content: center; min-width: 200px; padding: 1rem 2rem; font-size: 1.05rem; }
+
+    .table-wrapper {
+      background: #ffffff; border-radius: 28px; box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+      border: 2px solid #e9edf2; overflow-x: auto; padding: 0 0.5rem 0.5rem 0.5rem;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+    th {
+      text-align: left; padding: 1rem 0.8rem 0.6rem; font-weight: 700; color: #475569;
+      text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.7rem; border-bottom: 2px solid #e9edf2;
+    }
+    td { padding: 0.8rem 0.8rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    tr:hover td { background: #f8fafc; }
+
+    tr.nao-bateu td { background: #fff7ed; }
+    tr.nao-bateu:hover td { background: #ffedd5; }
+    tr.nao-bateu td:first-child { box-shadow: inset 4px 0 0 #f97316; }
+
+    .nick-cell { display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap; }
+    .contrib-inline {
+      font-size: 0.72rem; font-weight: 800; padding: 0.18rem 0.6rem; border-radius: 20px;
+      white-space: nowrap;
+    }
+    .contrib-inline.ok { background: #dcfce7; color: #16a34a; }
+    .contrib-inline.no { background: #fee2e2; color: #dc2626; }
+
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 8px; padding: 0.3rem 1rem;
+      border-radius: 40px; font-weight: 700; font-size: 0.8rem; box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+    .status-badge.aprovado { background: #dcfce7; color: #16a34a; }
+    .status-badge.reprovado { background: #fee2e2; color: #dc2626; }
+    .acoes { display: flex; gap: 0.4rem; flex-wrap: wrap; justify-content: center; }
+    .empty-msg { text-align: center; padding: 2rem; color: #94a3b8; }
+    .total-destaque { font-weight: 800; color: #0f172a; background: #f1f5f9; padding: 0.1rem 0.6rem; border-radius: 20px; }
+
     .dashboard-interativo {
-      margin-top: 2.5rem;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 1.5rem;
+      margin-top: 2.5rem; display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;
     }
     .chart-card {
-      background: #ffffff;
-      border-radius: 28px;
-      padding: 1.5rem 1.2rem 1.2rem;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-      border: 2px solid #e9edf2;
-      transition: 0.15s;
+      background: #ffffff; border-radius: 28px; padding: 1.5rem 1.2rem 1.2rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 2px solid #e9edf2; transition: 0.15s;
     }
     .chart-card:hover { border-color: #facc15; }
     .chart-card h3 {
-      font-size: 1rem;
-      font-weight: 700;
-      color: #0f172a;
-      margin-bottom: 0.8rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
+      font-size: 1rem; font-weight: 700; color: #0f172a; margin-bottom: 0.8rem;
+      display: flex; align-items: center; gap: 0.5rem;
     }
     .chart-card h3 i { color: #ef4444; }
-    .chart-wrapper {
-      position: relative;
-      height: 200px;
-    }
-    .chart-wrapper canvas {
-      width: 100% !important;
-      height: 100% !important;
-    }
+    .chart-wrapper { position: relative; height: 200px; }
+    .chart-wrapper canvas { width: 100% !important; height: 100% !important; }
 
-    /* Footer */
+    .pdf-actions-card {
+      background: #fff; border-radius: 28px; padding: 1.5rem 2rem; margin-top: 2rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 2px solid #e9edf2;
+    }
+    .pdf-actions-card h3 {
+      font-size: 1.1rem; font-weight: 800; color: #0f172a;
+      margin-bottom: 1rem; display: flex; align-items: center; gap: 0.55rem;
+    }
+    .pdf-actions-card h3 i { color: #f59e0b; }
+    .pdf-actions-row {
+      display: flex; gap: 0.8rem; flex-wrap: wrap;
+    }
+    .pdf-actions-row .btn { padding: 0.9rem 1.6rem; font-size: 0.95rem; }
+
+    .btn-pdf-vermelho { background: #ef4444; color: #fff; }
+    .btn-pdf-vermelho:hover { background: #dc2626; }
+    .btn-pdf-verde { background: #22c55e; color: #fff; }
+    .btn-pdf-verde:hover { background: #16a34a; }
+    .btn-pdf-amarelo { background: #f59e0b; color: #fff; }
+    .btn-pdf-amarelo:hover { background: #d97706; }
+
     .footer {
-      margin-top: 2.5rem;
-      padding: 1.5rem 0 0.5rem;
-      text-align: center;
-      font-size: 0.8rem;
-      color: #94a3b8;
-      border-top: 1px solid #e9edf2;
-      line-height: 1.6;
+      margin-top: 2.5rem; padding: 1.5rem 0 0.5rem; text-align: center;
+      font-size: 0.8rem; color: #94a3b8; border-top: 1px solid #e9edf2; line-height: 1.6;
     }
-
-    #pdfContent { display: none; }
 
     @media (max-width: 700px) {
       .form-row { flex-direction: column; align-items: stretch; }
@@ -408,6 +320,11 @@
       .pokeball-icon { width: 40px; height: 40px; }
       .dashboard-interativo { grid-template-columns: 1fr; }
       .chart-wrapper { height: 180px; }
+      .res-item input[type="text"] { flex: 1 1 100%; }
+      .res-item input[type="number"] { width: 100%; }
+      .btn-ler-gigante { font-size: 1.05rem; padding: 1.3rem 1rem; }
+      .btn-ler-gigante i { font-size: 1.4rem; }
+      .pdf-actions-row .btn { width: 100%; justify-content: center; }
     }
   </style>
 </head>
@@ -415,7 +332,6 @@
 
 <div class="container">
 
-  <!-- Cabeçalho -->
   <div class="header-pokemon">
     <div class="pokeball-icon"></div>
     <h1>
@@ -423,14 +339,15 @@
       <span class="subtitle"><i class="fas fa-bolt" style="color:#facc15;"></i> Meta diária: <strong style="background:#facc15; padding:0 8px; border-radius:20px;">750 pontos</strong></span>
     </h1>
     <div class="header-actions">
-      <button class="btn-pdf" id="btnPDF"><i class="fas fa-file-pdf"></i> Baixar PDF</button>
+      <button class="btn-nova-rodada" id="btnNovaRodada" title="Zera as contribuições do dia mantendo os totais">
+        <i class="fas fa-rotate"></i> Nova Rodada
+      </button>
     </div>
   </div>
   <p class="sub">
-    <i class="fas fa-flag-checkered" style="color:#ef4444;"></i> A contribuição de hoje é calculada pela diferença entre o total atual e o total anterior.
+    <i class="fas fa-flag-checkered" style="color:#ef4444;"></i> Cada foto enviada <b>ACUMULA</b> os pontos: a diferença entre o total novo e o antigo é somada à contribuição do dia.
   </p>
 
-  <!-- DASHBOARD TOPO (cards) -->
   <div class="resumo">
     <div class="resumo-card card-vermelho">
       <div class="mini-pokeball">⚪</div>
@@ -454,7 +371,48 @@
     </div>
   </div>
 
-  <!-- Formulário -->
+  <!-- LEITURA POR IA -->
+  <div class="gemini-card">
+    <div class="gemini-head">
+      <h3><i class="fas fa-robot"></i> Leitura automática dos prints (IA Gemini)</h3>
+      <span class="gemini-badge">Beta</span>
+    </div>
+
+    <div class="gemini-config">
+      <div class="form-group" style="flex: 2; min-width: 220px;">
+        <label><i class="fas fa-key"></i> API Key do Gemini</label>
+        <input type="password" id="geminiKey" placeholder="Cole aqui sua chave AIza..." autocomplete="off" />
+      </div>
+      <div class="form-group" style="flex: 1; min-width: 170px;">
+        <label><i class="fas fa-microchip"></i> Modelo</label>
+        <select id="geminiModel">
+          <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (principal)</option>
+          <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+          <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+          <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+        </select>
+      </div>
+      <button type="button" class="btn btn-primary" id="salvarKey">
+        <i class="fas fa-floppy-disk"></i> Salvar
+      </button>
+      <span class="key-status no" id="keyStatus">Chave não configurada</span>
+    </div>
+
+    <button type="button" class="btn-ler-gigante" id="btnLerFoto">
+      <i class="fas fa-camera"></i>
+      <div>
+        CLIQUE AQUI PARA LER A FOTO
+        <small>Escolha a imagem → a IA lê → você confere → clica em Adicionar</small>
+      </div>
+    </button>
+
+    <input type="file" id="fileInput" accept="image/*" multiple hidden />
+
+    <div class="progresso" id="progresso"></div>
+    <div class="resultado-panel" id="resultadoPanel" style="display:none;"></div>
+  </div>
+
+  <!-- Formulário manual -->
   <div class="form-card">
     <form id="playerForm">
       <div class="form-row">
@@ -477,20 +435,19 @@
         </div>
       </div>
       <div id="contribDisplay" style="margin-top: 10px; font-weight: 600; color: #2563eb; display: none;">
-        Contribuição de hoje: <span id="contribCalculada">0</span> pontos
+        Contribuição deste upload: <span id="contribCalculada">0</span> pontos
       </div>
       <input type="hidden" id="editIndex" value="-1" />
     </form>
   </div>
 
-  <!-- Tabela -->
   <div class="table-wrapper">
     <table>
       <thead>
         <tr>
           <th>Treinador</th>
           <th>Total acumulado</th>
-          <th>Contribuição hoje</th>
+          <th>Contribuição hoje (soma)</th>
           <th>Status Hoje</th>
           <th style="text-align: center;">Ações</th>
         </tr>
@@ -501,29 +458,37 @@
     </table>
   </div>
 
-  <!-- ========== DASHBOARD INTERATIVO (GRÁFICOS) ========== -->
-  <div class="dashboard-interativo">
-    <div class="chart-card">
-      <h3><i class="fas fa-chart-pie"></i> Desempenho hoje</h3>
-      <div class="chart-wrapper">
-        <canvas id="pieChart"></canvas>
-      </div>
-    </div>
-    <div class="chart-card">
-      <h3><i class="fas fa-chart-bar"></i> Contribuição hoje (por membro)</h3>
-      <div class="chart-wrapper">
-        <canvas id="barChartContrib"></canvas>
-      </div>
-    </div>
-    <div class="chart-card">
-      <h3><i class="fas fa-chart-bar"></i> Total acumulado (por membro)</h3>
-      <div class="chart-wrapper">
-        <canvas id="barChartTotal"></canvas>
-      </div>
+  <!-- PAINEL DE PDFs (3 BOTÕES) -->
+  <div class="pdf-actions-card">
+    <h3><i class="fas fa-file-pdf"></i> Relatórios em PDF</h3>
+    <div class="pdf-actions-row">
+      <button type="button" class="btn btn-pdf-verde" id="btnPDFBateram">
+        <i class="fas fa-trophy"></i> PDF — Todos que Bateram a Meta
+      </button>
+      <button type="button" class="btn btn-pdf-amarelo" id="btnPDFTop10">
+        <i class="fas fa-medal"></i> PDF — TOP 10 do Dia
+      </button>
+      <button type="button" class="btn btn-pdf-vermelho" id="btnPDFNaoBateram">
+        <i class="fas fa-triangle-exclamation"></i> PDF — Quem NÃO Bateu
+      </button>
     </div>
   </div>
 
-  <!-- FOOTER -->
+  <div class="dashboard-interativo">
+    <div class="chart-card">
+      <h3><i class="fas fa-chart-pie"></i> Desempenho hoje</h3>
+      <div class="chart-wrapper"><canvas id="pieChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3><i class="fas fa-chart-bar"></i> Contribuição hoje (por membro)</h3>
+      <div class="chart-wrapper"><canvas id="barChartContrib"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3><i class="fas fa-chart-bar"></i> Total acumulado (por membro)</h3>
+      <div class="chart-wrapper"><canvas id="barChartTotal"></canvas></div>
+    </div>
+  </div>
+
   <div class="footer">
     <p>
       <i class="fas fa-info-circle" style="margin-right: 6px;"></i>
@@ -533,30 +498,14 @@
 
 </div>
 
-<!-- PDF oculto -->
-<div id="pdfContent">
-  <div style="font-family: 'Inter', sans-serif; padding: 30px; max-width: 800px; margin: 0 auto;">
-    <h1 style="color: #ef4444; font-size: 28px; display: flex; align-items: center; gap: 10px;">
-      <span>📄 Relatório de Meta Não Batida</span>
-    </h1>
-    <p style="font-size: 16px; color: #475569; margin-bottom: 20px;">
-      Data: <strong id="pdfData"></strong>
-    </p>
-    <div id="pdfLista" style="margin-top: 20px;"></div>
-    <hr style="margin: 30px 0; border: 1px solid #e9edf2;" />
-    <p style="font-size: 14px; color: #94a3b8; text-align: center;">
-      Gerado automaticamente pelo Gerenciador da Guilda Pokémon.
-    </p>
-  </div>
-</div>
-
 <script>
   // ============================================================
-  //  DADOS
+  //  CONFIG / DADOS
   // ============================================================
   const META = 750;
-  let players = [];
+  let players = [];   // { nick, total, contrib }
   let chartPie, chartBarContrib, chartBarTotal;
+  let reviewItems = [];
 
   function loadData() {
     const stored = localStorage.getItem('guildaPokemon');
@@ -576,16 +525,14 @@
     saveData();
   }
 
-  function saveData() {
-    localStorage.setItem('guildaPokemon', JSON.stringify(players));
-  }
-
-  function formatarNumero(num) {
-    return num.toLocaleString('pt-BR');
+  function saveData() { localStorage.setItem('guildaPokemon', JSON.stringify(players)); }
+  function formatarNumero(num) { return Number(num).toLocaleString('pt-BR'); }
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
   // ============================================================
-  //  RENDER (inclui atualização de gráficos)
+  //  RENDER
   // ============================================================
   function render() {
     const tbody = document.getElementById('tableBody');
@@ -602,19 +549,31 @@
     if (total === 0) {
       tbody.innerHTML = `<tr><td colspan="5" class="empty-msg">Nenhum treinador cadastrado ainda. Adicione o primeiro!</td></tr>`;
     } else {
+      const order = players.map((p, i) => ({ p, i }))
+        .sort((a, b) => (a.p.contrib >= META) - (b.p.contrib >= META));
+
       let html = '';
-      players.forEach((p, index) => {
+      order.forEach(({ p, i }) => {
         const bateuHoje = p.contrib >= META;
+        const falta = Math.max(0, META - p.contrib);
         html += `
-          <tr>
-            <td><strong>${p.nick}</strong></td>
+          <tr class="${bateuHoje ? '' : 'nao-bateu'}">
+            <td>
+              <div class="nick-cell">
+                <strong>${escapeHtml(p.nick)}</strong>
+                <span class="contrib-inline ${bateuHoje ? 'ok' : 'no'}">${p.contrib >= 0 ? '+' : ''}${formatarNumero(p.contrib)} pts</span>
+              </div>
+            </td>
             <td><span class="total-destaque">${formatarNumero(p.total)}</span></td>
-            <td><strong>${p.contrib}</strong></td>
+            <td>
+              <strong style="color:${bateuHoje ? '#16a34a' : '#dc2626'}; font-size: 1.05rem;">${formatarNumero(p.contrib)}</strong>
+              ${!bateuHoje ? `<div style="font-size:0.72rem;color:#f97316;font-weight:700;margin-top:2px;">faltam ${formatarNumero(falta)}</div>` : ''}
+            </td>
             <td>${renderStatus(bateuHoje)}</td>
             <td style="text-align: center;">
               <div class="acoes">
-                <button class="btn-edit" data-index="${index}"><i class="fas fa-pen"></i> Editar</button>
-                <button class="btn-excluir" data-index="${index}"><i class="fas fa-trash"></i> Excluir</button>
+                <button class="btn-edit" data-index="${i}"><i class="fas fa-pen"></i> Editar</button>
+                <button class="btn-excluir" data-index="${i}"><i class="fas fa-trash"></i> Excluir</button>
               </div>
             </td>
           </tr>
@@ -623,126 +582,73 @@
       tbody.innerHTML = html;
     }
 
-    // Atualiza gráficos
     atualizarGraficos();
 
-    // Eventos dos botões
     tbody.querySelectorAll('.btn-edit').forEach(btn => {
-      btn.addEventListener('click', function() {
-        editarPlayer(parseInt(this.dataset.index, 10));
-      });
+      btn.addEventListener('click', function() { editarPlayer(parseInt(this.dataset.index, 10)); });
     });
     tbody.querySelectorAll('.btn-excluir').forEach(btn => {
-      btn.addEventListener('click', function() {
-        excluirPlayer(parseInt(this.dataset.index, 10));
-      });
+      btn.addEventListener('click', function() { excluirPlayer(parseInt(this.dataset.index, 10)); });
     });
   }
 
   function renderStatus(bateu) {
-    if (bateu) {
-      return `<span class="status-badge aprovado">✔ Meta batida! 🏆</span>`;
-    } else {
-      return `<span class="status-badge reprovado">✖ Não bateu 😢</span>`;
-    }
+    return bateu
+      ? `<span class="status-badge aprovado">✔ Meta batida! 🏆</span>`
+      : `<span class="status-badge reprovado">✖ Não bateu 😢</span>`;
   }
 
   // ============================================================
   //  GRÁFICOS
   // ============================================================
   function inicializarGraficos() {
-    const ctxPie = document.getElementById('pieChart').getContext('2d');
-    const ctxBarContrib = document.getElementById('barChartContrib').getContext('2d');
-    const ctxBarTotal = document.getElementById('barChartTotal').getContext('2d');
-
-    chartPie = new Chart(ctxPie, {
+    chartPie = new Chart(document.getElementById('pieChart').getContext('2d'), {
       type: 'pie',
       data: {
         labels: ['Bateram meta', 'Não bateram'],
-        datasets: [{
-          data: [0, 0],
-          backgroundColor: ['#22c55e', '#facc15'],
-          borderColor: '#fff',
-          borderWidth: 2
-        }]
+        datasets: [{ data: [0, 0], backgroundColor: ['#22c55e', '#facc15'], borderColor: '#fff', borderWidth: 2 }]
       },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+    });
+
+    chartBarContrib = new Chart(document.getElementById('barChartContrib').getContext('2d'), {
+      type: 'bar',
+      data: { labels: [], datasets: [{ label: 'Contribuição hoje', data: [], backgroundColor: [], borderRadius: 6 }] },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'bottom' }
-        }
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } }
       }
     });
 
-    chartBarContrib = new Chart(ctxBarContrib, {
+    chartBarTotal = new Chart(document.getElementById('barChartTotal').getContext('2d'), {
       type: 'bar',
-      data: {
-        labels: [],
-        datasets: [{
-          label: 'Contribuição hoje',
-          data: [],
-          backgroundColor: '#3b82f6',
-          borderRadius: 6
-        }]
-      },
+      data: { labels: [], datasets: [{ label: 'Total acumulado', data: [], backgroundColor: '#8b5cf6', borderRadius: 6 }] },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false }
-        },
-        scales: {
-          y: { beginAtZero: true }
-        }
-      }
-    });
-
-    chartBarTotal = new Chart(ctxBarTotal, {
-      type: 'bar',
-      data: {
-        labels: [],
-        datasets: [{
-          label: 'Total acumulado',
-          data: [],
-          backgroundColor: '#8b5cf6',
-          borderRadius: 6
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false }
-        },
-        scales: {
-          y: { beginAtZero: true }
-        }
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } }
       }
     });
   }
 
   function atualizarGraficos() {
     if (!chartPie || !chartBarContrib || !chartBarTotal) return;
-
     const bateu = players.filter(p => p.contrib >= META).length;
     const naoBateu = players.length - bateu;
 
-    // Pizza
     chartPie.data.datasets[0].data = [bateu, naoBateu];
     chartPie.update();
 
-    // Barras - contribuição hoje
     const nomes = players.map(p => p.nick);
     const contribs = players.map(p => p.contrib);
     chartBarContrib.data.labels = nomes;
     chartBarContrib.data.datasets[0].data = contribs;
+    chartBarContrib.data.datasets[0].backgroundColor = contribs.map(c => c >= META ? '#22c55e' : '#f97316');
     chartBarContrib.update();
 
-    // Barras - total acumulado
-    const totais = players.map(p => p.total);
     chartBarTotal.data.labels = nomes;
-    chartBarTotal.data.datasets[0].data = totais;
+    chartBarTotal.data.datasets[0].data = players.map(p => p.total);
     chartBarTotal.update();
   }
 
@@ -754,11 +660,7 @@
       alert('Esse treinador já está na lista! Use "Editar".');
       return false;
     }
-    players.push({
-      nick: nick.trim(),
-      total: totalAtual,
-      contrib: totalAtual
-    });
+    players.push({ nick: nick.trim(), total: totalAtual, contrib: totalAtual });
     saveData();
     render();
     return true;
@@ -777,20 +679,13 @@
 
   function salvarEdicao(index, nick, totalAtual) {
     const exists = players.some((p, i) => i !== index && p.nick.toLowerCase() === nick.toLowerCase());
-    if (exists) {
-      alert('Esse nick já está em outro treinador.');
-      return false;
-    }
-    const totalAnterior = players[index].total;
-    const contrib = totalAtual - totalAnterior;
-    if (contrib < 0) {
-      alert('O total atual não pode ser menor que o total anterior.');
-      return false;
-    }
+    if (exists) { alert('Esse nick já está em outro treinador.'); return false; }
+    const anterior = players[index].total;
+    const diff = totalAtual - anterior;
     players[index] = {
       nick: nick.trim(),
       total: totalAtual,
-      contrib: contrib
+      contrib: players[index].contrib + diff
     };
     saveData();
     render();
@@ -815,66 +710,643 @@
     document.getElementById('contribDisplay').style.display = 'none';
   }
 
-  // ============================================================
-  //  CÁLCULO DA CONTRIBUIÇÃO (tempo real)
-  // ============================================================
   function calcularContribuicao() {
     const totalAnterior = parseFloat(document.getElementById('totalAnterior').value) || 0;
     const totalAtual = parseFloat(document.getElementById('totalAtual').value);
     if (!isNaN(totalAtual) && totalAtual >= 0) {
       const contrib = totalAtual - totalAnterior;
-      document.getElementById('contribCalculada').textContent = contrib >= 0 ? contrib : 0;
+      const el = document.getElementById('contribCalculada');
+      el.textContent = contrib >= 0 ? formatarNumero(contrib) : 0;
+      el.style.color = contrib < 0 ? 'red' : '#2563eb';
       document.getElementById('contribDisplay').style.display = 'block';
-      if (contrib < 0) {
-        document.getElementById('contribCalculada').style.color = 'red';
-      } else {
-        document.getElementById('contribCalculada').style.color = '#2563eb';
-      }
     } else {
       document.getElementById('contribDisplay').style.display = 'none';
     }
   }
 
   // ============================================================
-  //  PDF
+  //  NOVA RODADA
   // ============================================================
-  function gerarPDF() {
-    const hoje = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    document.getElementById('pdfData').textContent = hoje;
+  document.getElementById('btnNovaRodada').addEventListener('click', () => {
+    if (!confirm('🔄 Iniciar nova rodada?\n\nZera a contribuição do dia de TODOS os treinadores (mantém o total acumulado como referência).\n\nUse isso quando virar o dia.')) return;
+    players.forEach(p => { p.contrib = 0; });
+    saveData();
+    render();
+    alert('✅ Nova rodada iniciada! Contribuições zeradas.');
+  });
 
-    const naoBateram = players.filter(p => p.contrib < META);
-    const listaDiv = document.getElementById('pdfLista');
+  // ============================================================
+  //  GEMINI
+  // ============================================================
+  const KEY_STORAGE = 'guildaGeminiKey';
+  const MODEL_STORAGE = 'guildaGeminiModel';
+  const MODELO_PADRAO = 'gemini-3.5-flash-lite';
 
-    if (naoBateram.length === 0) {
-      listaDiv.innerHTML = `<p style="font-size: 18px; color: #16a34a;">🎉 Parabéns! Todos os membros bateram a meta hoje!</p>`;
+  const PROMPT_IA = `Analise esta imagem, que é um print de um jogo idle/incremental (IdleDex, Pokémon, etc).
+
+A imagem normalmente mostra uma LISTA/RANKING de jogadores, cada um com:
+- Um NICK (nome/apelido do jogador)
+- Um NÚMERO grande que é a pontuação TOTAL acumulada
+
+Extraia TODOS os treinadores visíveis.
+
+Retorne APENAS um JSON válido neste formato exato, sem markdown, sem explicações:
+
+{"jogadores":[{"nick":"Nome1","total":12345},{"nick":"Nome2","total":67890}]}
+
+REGRAS IMPORTANTES:
+1. "total" deve ser número inteiro SEM pontos, vírgulas ou letras.
+   - "10.820" → 10820
+   - "10,820" → 10820
+   - "10 820" → 10820
+   - "1.2K"   → 1200
+   - "1.2M"   → 1200000
+   - "15K"    → 15000
+2. "nick" é o nome exatamente como aparece (mantenha letras, números e símbolos).
+3. Extraia TODOS os jogadores visíveis, não só o primeiro.
+4. Ignore posições de ranking (1º, 2º...).
+5. NÃO invente dados. Se não conseguir ler um jogador, pule ele.
+6. Se não houver nenhum jogador legível, retorne {"jogadores":[]}.
+7. Retorne SOMENTE o JSON. Nada antes. Nada depois.`;
+
+  function getApiKey() { return (localStorage.getItem(KEY_STORAGE) || '').trim(); }
+  function getModel()  { return (localStorage.getItem(MODEL_STORAGE) || MODELO_PADRAO).trim(); }
+
+  function atualizarStatusKey() {
+    const el = document.getElementById('keyStatus');
+    if (getApiKey()) {
+      el.textContent = '✔ Chave salva';
+      el.className = 'key-status ok';
     } else {
-      let html = `<h3 style="font-size: 18px; color: #dc2626;">⚠️ ${naoBateram.length} treinador(es) NÃO bateram a meta de ${META} pontos hoje:</h3>
-                  <ul style="list-style: none; padding: 0; margin-top: 15px;">`;
-      naoBateram.forEach(p => {
-        html += `<li style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; font-size: 15px;">
-                  <span><strong>${p.nick}</strong></span>
-                  <span>Total acumulado: ${formatarNumero(p.total)}</span>
-                  <span style="color: #dc2626; font-weight: 700;">${p.contrib} pontos (hoje)</span>
-                </li>`;
-      });
-      html += `</ul>`;
-      listaDiv.innerHTML = html;
+      el.textContent = 'Chave não configurada';
+      el.className = 'key-status no';
     }
+  }
 
-    const pdfElement = document.getElementById('pdfContent');
-    pdfElement.style.display = 'block';
+  function initGeminiConfig() {
+    const savedKey = getApiKey();
+    const savedModel = getModel();
+    if (savedKey) document.getElementById('geminiKey').value = savedKey;
+    document.getElementById('geminiModel').value = savedModel;
+    atualizarStatusKey();
+  }
 
-    const opt = {
-      margin:        [0.5, 0.5, 0.5, 0.5],
-      filename:     `relatorio_meta_${hoje.replace(/\//g, '-')}.pdf`,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, letterRendering: true },
-      jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+  document.getElementById('salvarKey').addEventListener('click', () => {
+    const k = document.getElementById('geminiKey').value.trim();
+    const m = document.getElementById('geminiModel').value;
+    localStorage.setItem(KEY_STORAGE, k);
+    localStorage.setItem(MODEL_STORAGE, m);
+    atualizarStatusKey();
+    alert(k ? '✔ Chave salva com sucesso!' : 'Chave removida.');
+  });
+
+  document.getElementById('geminiModel').addEventListener('change', (e) => {
+    localStorage.setItem(MODEL_STORAGE, e.target.value);
+  });
+
+  // ============================================================
+  //  BOTÃO LER FOTO
+  // ============================================================
+  const fileInput = document.getElementById('fileInput');
+
+  document.getElementById('btnLerFoto').addEventListener('click', () => {
+    if (!getApiKey()) {
+      alert('⚠️ Cole e salve primeiro a API Key do Gemini.');
+      document.getElementById('geminiKey').focus();
+      document.getElementById('geminiKey').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    fileInput.click();
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    const files = [...e.target.files];
+    if (files.length) processarImagens(files);
+    e.target.value = '';
+  });
+
+  // ---------- Compressão ----------
+  function comprimirImagem(file, maxW = 1600, quality = 0.92) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        let { width, height } = img;
+        if (width > maxW) { height = Math.round(height * maxW / width); width = maxW; }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve({ dataUrl, base64: dataUrl.split(',')[1], mimeType: 'image/jpeg' });
+      };
+      img.onerror = reject;
+      img.src = url;
+    });
+  }
+
+  // ---------- Chamada API ----------
+  async function chamarGemini(base64, mimeType) {
+    const key = getApiKey();
+    const model = getModel();
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+
+    const body = {
+      contents: [{
+        parts: [
+          { text: PROMPT_IA },
+          { inline_data: { mime_type: mimeType, data: base64 } }
+        ]
+      }],
+      generationConfig: { temperature: 0, maxOutputTokens: 2048 }
     };
 
-    html2pdf().set(opt).from(pdfElement).save().then(() => {
-      pdfElement.style.display = 'none';
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
     });
+
+    if (!res.ok) {
+      let msg = `Erro HTTP ${res.status}`;
+      try { const err = await res.json(); msg = err?.error?.message || msg; } catch (_) {}
+      throw new Error(msg);
+    }
+
+    const data = await res.json();
+    const cand = data?.candidates?.[0];
+    if (!cand) throw new Error('IA não retornou resposta.');
+    const txt = cand?.content?.parts?.map(p => p.text).join('') || '';
+    if (!txt) throw new Error('Resposta vazia.');
+
+    let clean = txt.trim();
+    if (clean.startsWith('```')) {
+      clean = clean.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
+    }
+
+    let parsed;
+    try { parsed = JSON.parse(clean); }
+    catch (_) {
+      const m = clean.match(/\{[\s\S]*\}/);
+      if (!m) throw new Error('Resposta não é JSON.');
+      parsed = JSON.parse(m[0]);
+    }
+
+    const lista = Array.isArray(parsed?.jogadores) ? parsed.jogadores : [];
+
+    return lista
+      .filter(j => j && typeof j.nick === 'string' && j.nick.trim() && Number.isFinite(Number(j.total)))
+      .map(j => {
+        const nick = j.nick.trim().replace(/[^\p{L}\p{N}\s._\-\[\]]/gu, '').replace(/\s+/g, ' ').trim();
+        return { nick, total: Math.round(Number(j.total)) };
+      })
+      .filter(j => j.nick.length > 0);
+  }
+
+  // ---------- Processamento ----------
+  async function processarImagens(files) {
+    const prog = document.getElementById('progresso');
+    const panel = document.getElementById('resultadoPanel');
+    prog.innerHTML = '';
+    panel.style.display = 'none';
+    panel.innerHTML = '';
+    reviewItems = [];
+
+    const rows = files.map((file) => {
+      const row = document.createElement('div');
+      row.className = 'prog-item';
+      row.innerHTML = `<div class="spin"></div><div class="txt">Lendo <b>${escapeHtml(file.name)}</b>...</div>`;
+      prog.appendChild(row);
+      return row;
+    });
+
+    let okCount = 0, errCount = 0, totalJogadores = 0;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const row = rows[i];
+      try {
+        const { dataUrl, base64, mimeType } = await comprimirImagem(file);
+
+        const spinEl = row.querySelector('.spin');
+        if (spinEl) {
+          const thumb = document.createElement('img');
+          thumb.className = 'thumb';
+          thumb.src = dataUrl;
+          spinEl.replaceWith(thumb);
+        }
+
+        const lista = await chamarGemini(base64, mimeType);
+        if (!lista.length) throw new Error('Nenhum treinador identificado.');
+
+        lista.forEach(j => reviewItems.push({ ...j, thumb: dataUrl }));
+        totalJogadores += lista.length;
+        okCount++;
+
+        row.querySelector('.txt').innerHTML =
+          `✅ <b>${escapeHtml(file.name)}</b> → ` +
+          lista.map(j => `${escapeHtml(j.nick)} (${formatarNumero(j.total)})`).join(', ');
+        const oldThumb = row.querySelector('.thumb');
+        if (oldThumb) {
+          const ico = document.createElement('i');
+          ico.className = 'fas fa-check-circle ok-ico';
+          oldThumb.replaceWith(ico);
+        }
+      } catch (err) {
+        errCount++;
+        row.querySelector('.txt').innerHTML = `❌ <b>${escapeHtml(file.name)}</b> — ${escapeHtml(err.message)}`;
+        const t = row.querySelector('.thumb') || row.querySelector('.spin');
+        if (t) {
+          const ico = document.createElement('i');
+          ico.className = 'fas fa-times-circle err-ico';
+          t.replaceWith(ico);
+        }
+      }
+    }
+
+    const resumo = document.createElement('div');
+    resumo.style.cssText = 'margin-top:.5rem;font-size:.85rem;font-weight:700;color:#475569;';
+    resumo.textContent = `${okCount} imagem(ns) OK · ${errCount} erro(s) · ${totalJogadores} treinador(es)`;
+    prog.appendChild(resumo);
+
+    if (reviewItems.length) renderResultado();
+  }
+
+  // ---------- Painel de resultado ----------
+  function renderResultado() {
+    const panel = document.getElementById('resultadoPanel');
+    panel.style.display = 'block';
+
+    let html = `<h4><i class="fas fa-triangle-exclamation"></i> Confira antes de adicionar (${reviewItems.length})</h4>`;
+
+    reviewItems.forEach((it, i) => {
+      html += `
+        <div class="res-item" data-idx="${i}">
+          <div class="res-item-top">
+            <input type="checkbox" class="res-check" checked style="width:20px;height:20px;accent-color:#3b82f6;cursor:pointer;" />
+            <img class="res-thumb" src="${it.thumb}" alt="" />
+            <input type="text" class="res-nick" value="${escapeHtml(it.nick)}" placeholder="Nick" />
+            <input type="number" class="res-total" value="${it.total}" min="0" step="1" placeholder="Total novo" />
+            <span class="res-info novo">—</span>
+          </div>
+          <div class="res-calc">
+            <span class="chip ant">Antes: <span class="calc-ant">—</span></span>
+            <span class="chip novo2">Novo: <span class="calc-novo">—</span></span>
+            <span class="chip diff">Este upload: <span class="calc-diff">—</span></span>
+            <span class="chip total-hoje">Hoje (soma): <span class="calc-total-hoje">—</span></span>
+          </div>
+        </div>
+      `;
+    });
+
+    html += `
+      <div class="res-actions">
+        <button type="button" class="btn btn-verde" id="btnAdicionar">
+          <i class="fas fa-plus-circle"></i> ADICIONAR À TABELA
+        </button>
+        <button type="button" class="btn btn-ghost" id="btnCancelar">
+          <i class="fas fa-xmark"></i> Cancelar
+        </button>
+      </div>
+    `;
+
+    panel.innerHTML = html;
+
+    panel.querySelectorAll('.res-item').forEach(item => {
+      atualizarInfo(item);
+      item.querySelector('.res-nick').addEventListener('input', () => atualizarInfo(item));
+      item.querySelector('.res-total').addEventListener('input', () => atualizarInfo(item));
+    });
+
+    document.getElementById('btnAdicionar').addEventListener('click', confirmarAdicionar);
+    document.getElementById('btnCancelar').addEventListener('click', () => {
+      panel.style.display = 'none';
+      panel.innerHTML = '';
+      document.getElementById('progresso').innerHTML = '';
+      reviewItems = [];
+    });
+
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function atualizarInfo(item) {
+    const nick = item.querySelector('.res-nick').value.trim();
+    const totalNovo = Number(item.querySelector('.res-total').value) || 0;
+    const infoEl = item.querySelector('.res-info');
+    const calcAnt = item.querySelector('.calc-ant');
+    const calcNovo = item.querySelector('.calc-novo');
+    const calcDiff = item.querySelector('.calc-diff');
+    const calcTotalHoje = item.querySelector('.calc-total-hoje');
+
+    if (!nick) {
+      infoEl.className = 'res-info no';
+      infoEl.textContent = 'Sem nick';
+      calcAnt.textContent = '—'; calcNovo.textContent = '—';
+      calcDiff.textContent = '—'; calcTotalHoje.textContent = '—';
+      return;
+    }
+
+    const idx = players.findIndex(p => p.nick.toLowerCase() === nick.toLowerCase());
+
+    if (idx >= 0) {
+      const anterior = players[idx].total;
+      const contribAnterior = players[idx].contrib;
+      const diff = totalNovo - anterior;
+      const novoContrib = contribAnterior + diff;
+      const ok = novoContrib >= META;
+
+      calcAnt.textContent = formatarNumero(anterior);
+      calcNovo.textContent = formatarNumero(totalNovo);
+      calcDiff.textContent = (diff >= 0 ? '+' : '') + formatarNumero(diff);
+      calcDiff.className = 'chip diff' + (diff < 0 ? ' neg' : '');
+      calcTotalHoje.textContent = formatarNumero(novoContrib) + ' pts';
+
+      if (ok) { infoEl.className = 'res-info ok'; infoEl.textContent = '✔ Bate meta'; }
+      else { infoEl.className = 'res-info no'; infoEl.textContent = `✖ Falta ${formatarNumero(META - novoContrib)}`; }
+    } else {
+      calcAnt.textContent = '(novo)';
+      calcNovo.textContent = formatarNumero(totalNovo);
+      calcDiff.textContent = '+' + formatarNumero(totalNovo);
+      calcTotalHoje.textContent = formatarNumero(totalNovo) + ' pts';
+      const ok = totalNovo >= META;
+      infoEl.className = 'res-info ' + (ok ? 'ok' : 'novo');
+      infoEl.textContent = ok ? '✔ Novo + bate' : '🆕 Novo';
+    }
+  }
+
+  function confirmarAdicionar() {
+    let aplicados = 0, novos = 0, atualizados = 0, naoBateram = 0;
+
+    document.querySelectorAll('#resultadoPanel .res-item').forEach(item => {
+      if (!item.querySelector('.res-check').checked) return;
+      const nick = item.querySelector('.res-nick').value.trim();
+      const totalNovo = Number(item.querySelector('.res-total').value);
+      if (!nick || !Number.isFinite(totalNovo) || totalNovo < 0) return;
+
+      const idx = players.findIndex(p => p.nick.toLowerCase() === nick.toLowerCase());
+
+      if (idx >= 0) {
+        const anterior = players[idx].total;
+        const diff = totalNovo - anterior;
+        players[idx].contrib += diff;
+        players[idx].total = totalNovo;
+        atualizados++;
+        if (players[idx].contrib < META) naoBateram++;
+      } else {
+        players.push({ nick, total: totalNovo, contrib: totalNovo });
+        novos++;
+        if (totalNovo < META) naoBateram++;
+      }
+      aplicados++;
+    });
+
+    if (!aplicados) { alert('Nenhum item selecionado.'); return; }
+
+    saveData();
+    render();
+    reviewItems = [];
+    document.getElementById('resultadoPanel').style.display = 'none';
+    document.getElementById('resultadoPanel').innerHTML = '';
+    document.getElementById('progresso').innerHTML = '';
+
+    alert(`✅ Adicionado!\n\n• ${aplicados} treinador(es) processado(s)\n• ${novos} novo(s)\n• ${atualizados} atualizado(s)\n• ${naoBateram} não bateu(ram) 😢`);
+  }
+
+  // ============================================================
+  //  PDFs COM jsPDF PURO
+  // ============================================================
+  const { jsPDF } = window.jspdf;
+
+  function criarPDFBase(titulo, corTitulo, subtitulo1, subtitulo2) {
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const pageW = doc.internal.pageSize.getWidth();
+    const margin = 15;
+
+    doc.setFillColor(...corTitulo);
+    doc.rect(0, 0, pageW, 4, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.setTextColor(...corTitulo);
+    doc.text(titulo, margin, 22);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    doc.setTextColor(71, 85, 105);
+    doc.text(subtitulo1, margin, 30);
+    doc.text(subtitulo2, margin, 36);
+
+    doc.setDrawColor(233, 237, 242);
+    doc.setLineWidth(0.5);
+    doc.line(margin, 40, pageW - margin, 40);
+
+    return { doc, pageW, margin, y: 48 };
+  }
+
+  function rodapePDF(doc, pageW, pageH, margin) {
+    doc.setFontSize(9);
+    doc.setTextColor(148, 163, 184);
+    doc.text('Gerado automaticamente pelo Gerenciador da Guilda Pokemon', pageW / 2, pageH - 10, { align: 'center' });
+  }
+
+  // ---------- PDF 1: TODOS QUE BATERAM ----------
+  function gerarPDFBateram() {
+    const hoje = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const batedores = players.filter(p => p.contrib >= META).sort((a, b) => b.contrib - a.contrib);
+
+    const { doc, pageW, margin } = criarPDFBase(
+      'Relatorio - Todos que Bateram a Meta',
+      [22, 163, 74],
+      `Data: ${hoje}`,
+      `Meta: ${META} pontos  |  Batedores: ${batedores.length} de ${players.length}`
+    );
+
+    const pageH = doc.internal.pageSize.getHeight();
+    let y = 50;
+
+    if (batedores.length === 0) {
+      doc.setFontSize(14);
+      doc.setTextColor(220, 38, 38);
+      doc.text('Nenhum treinador bateu a meta ainda hoje.', margin, y);
+      rodapePDF(doc, pageW, pageH, margin);
+      doc.save(`relatorio_bateram_meta_${hoje.replace(/\//g, '-')}.pdf`);
+      return;
+    }
+
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(22, 163, 74);
+    doc.text(`${batedores.length} treinador(es) bateram a meta:`, margin, y);
+    y += 10;
+
+    batedores.forEach((p, i) => {
+      if (y > pageH - 30) { doc.addPage(); y = 20; }
+
+      const medalha = i === 0 ? '1.' : i === 1 ? '2.' : i === 2 ? '3.' : `${i + 1}.`;
+
+      doc.setFillColor(i % 2 === 0 ? 248 : 255, i % 2 === 0 ? 250 : 255, i % 2 === 0 ? 252 : 255);
+      doc.rect(margin - 2, y - 5, pageW - (margin * 2) + 4, 12, 'F');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor(15, 23, 42);
+      doc.text(`${medalha} ${p.nick}`, margin, y + 2);
+
+      doc.setTextColor(22, 163, 74);
+      doc.text(`+${formatarNumero(p.contrib)} pts`, pageW - margin, y + 2, { align: 'right' });
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Total acumulado: ${formatarNumero(p.total)}`, margin, y + 8);
+
+      y += 14;
+    });
+
+    rodapePDF(doc, pageW, pageH, margin);
+    doc.save(`relatorio_bateram_meta_${hoje.replace(/\//g, '-')}.pdf`);
+  }
+
+  // ---------- PDF 2: TOP 10 ----------
+  function gerarPDFTop10() {
+    const hoje = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const top10 = [...players].sort((a, b) => b.contrib - a.contrib).slice(0, 10);
+
+    const { doc, pageW, margin } = criarPDFBase(
+      'TOP 10 - Maiores Contribuidores do Dia',
+      [245, 158, 11],
+      `Data: ${hoje}`,
+      `Meta: ${META} pontos  |  Ranking por contribuicao acumulada de hoje`
+    );
+
+    const pageH = doc.internal.pageSize.getHeight();
+    let y = 50;
+
+    if (top10.length === 0) {
+      doc.setFontSize(14);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Sem dados ainda.', margin, y);
+      rodapePDF(doc, pageW, pageH, margin);
+      doc.save(`relatorio_top10_${hoje.replace(/\//g, '-')}.pdf`);
+      return;
+    }
+
+    const colPos = margin;
+    const colNome = margin + 18;
+    const colContrib = pageW - margin - 55;
+    const colTotal = pageW - margin - 25;
+    const colMeta = pageW - margin;
+
+    doc.setFillColor(254, 243, 199);
+    doc.rect(margin - 2, y - 6, pageW - (margin * 2) + 4, 10, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(146, 64, 14);
+    doc.text('#', colPos, y);
+    doc.text('TREINADOR', colNome, y);
+    doc.text('CONTRIBUICAO', colContrib, y, { align: 'right' });
+    doc.text('TOTAL', colTotal, y, { align: 'right' });
+    doc.text('META', colMeta, y, { align: 'right' });
+
+    y += 8;
+
+    top10.forEach((p, i) => {
+      const pos = i + 1;
+      const bateu = p.contrib >= META;
+
+      if (pos === 1) doc.setFillColor(254, 249, 195);
+      else if (pos === 2) doc.setFillColor(241, 245, 249);
+      else if (pos === 3) doc.setFillColor(254, 243, 199);
+      else doc.setFillColor(255, 255, 255);
+
+      doc.rect(margin - 2, y - 5, pageW - (margin * 2) + 4, 10, 'F');
+
+      doc.setDrawColor(233, 237, 242);
+      doc.setLineWidth(0.2);
+      doc.line(margin - 2, y + 5, pageW - margin + 2, y + 5);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(15, 23, 42);
+      doc.text(`${pos}`, colPos, y + 2);
+
+      doc.text(p.nick, colNome, y + 2);
+
+      doc.setTextColor(bateu ? 22 : 220, bateu ? 163 : 38, bateu ? 74 : 38);
+      doc.text(formatarNumero(p.contrib), colContrib, y + 2, { align: 'right' });
+
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(71, 85, 105);
+      doc.text(formatarNumero(p.total), colTotal, y + 2, { align: 'right' });
+
+      doc.setTextColor(bateu ? 22 : 220, bateu ? 163 : 38, bateu ? 74 : 38);
+      doc.setFont('helvetica', 'bold');
+      doc.text(bateu ? 'OK' : 'X', colMeta, y + 2, { align: 'right' });
+
+      y += 11;
+    });
+
+    rodapePDF(doc, pageW, pageH, margin);
+    doc.save(`relatorio_top10_${hoje.replace(/\//g, '-')}.pdf`);
+  }
+
+  // ---------- PDF 3: NÃO BATERAM ----------
+  function gerarPDFNao() {
+    const hoje = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const naoBateram = players.filter(p => p.contrib < META).sort((a, b) => a.contrib - b.contrib);
+
+    const { doc, pageW, margin } = criarPDFBase(
+      'Relatorio - Meta Nao Batida',
+      [239, 68, 68],
+      `Data: ${hoje}`,
+      `Meta: ${META} pontos  |  Nao batedores: ${naoBateram.length} de ${players.length}`
+    );
+
+    const pageH = doc.internal.pageSize.getHeight();
+    let y = 50;
+
+    if (naoBateram.length === 0) {
+      doc.setFontSize(14);
+      doc.setTextColor(22, 163, 74);
+      doc.text('Parabens! Todos os membros bateram a meta hoje!', margin, y);
+      rodapePDF(doc, pageW, pageH, margin);
+      doc.save(`relatorio_nao_bateram_${hoje.replace(/\//g, '-')}.pdf`);
+      return;
+    }
+
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(220, 38, 38);
+    doc.text(`${naoBateram.length} treinador(es) NAO bateram a meta:`, margin, y);
+    y += 10;
+
+    naoBateram.forEach((p, i) => {
+      if (y > pageH - 30) { doc.addPage(); y = 20; }
+
+      const falta = META - p.contrib;
+
+      doc.setFillColor(i % 2 === 0 ? 255 : 255, i % 2 === 0 ? 247 : 255, i % 2 === 0 ? 237 : 255);
+      doc.rect(margin - 2, y - 5, pageW - (margin * 2) + 4, 14, 'F');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor(15, 23, 42);
+      doc.text(p.nick, margin, y + 2);
+
+      doc.setTextColor(220, 38, 38);
+      doc.text(`${formatarNumero(p.contrib)} pts`, pageW - margin, y + 2, { align: 'right' });
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Total: ${formatarNumero(p.total)}  |  Faltam: ${formatarNumero(falta)} pontos`, margin, y + 8);
+
+      y += 16;
+    });
+
+    rodapePDF(doc, pageW, pageH, margin);
+    doc.save(`relatorio_nao_bateram_${hoje.replace(/\//g, '-')}.pdf`);
   }
 
   // ============================================================
@@ -888,36 +1360,36 @@
 
     if (!nick) return alert('Digite o nick do treinador.');
     if (totalAtual === '') return alert('Digite o total atual.');
-    if (isNaN(totalAtual) || Number(totalAtual) < 0) {
-      return alert('Total atual deve ser um número válido (0 ou mais).');
-    }
+    if (isNaN(totalAtual) || Number(totalAtual) < 0) return alert('Total inválido.');
 
     const totalNum = Number(totalAtual);
 
-    if (editIndex >= 0) {
-      salvarEdicao(editIndex, nick, totalNum);
-    } else {
-      if (adicionarPlayer(nick, totalNum)) this.reset();
-    }
+    if (editIndex >= 0) salvarEdicao(editIndex, nick, totalNum);
+    else if (adicionarPlayer(nick, totalNum)) this.reset();
   });
 
   document.getElementById('playerForm').addEventListener('reset', resetForm);
   document.getElementById('totalAtual').addEventListener('input', calcularContribuicao);
-  document.getElementById('btnPDF').addEventListener('click', gerarPDF);
+
+  document.getElementById('btnPDFBateram').addEventListener('click', gerarPDFBateram);
+  document.getElementById('btnPDFTop10').addEventListener('click', gerarPDFTop10);
+  document.getElementById('btnPDFNaoBateram').addEventListener('click', gerarPDFNao);
 
   // ============================================================
-  //  INICIALIZAÇÃO
+  //  INIT
   // ============================================================
   loadData();
-  // Inicializa gráficos após carregar a página
-  document.addEventListener('DOMContentLoaded', function() {
+
+  function boot() {
     inicializarGraficos();
     render();
-  });
-  // Se o DOM já estiver carregado, chama diretamente
+    initGeminiConfig();
+  }
+
   if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    inicializarGraficos();
-    render();
+    boot();
+  } else {
+    document.addEventListener('DOMContentLoaded', boot);
   }
 </script>
 
