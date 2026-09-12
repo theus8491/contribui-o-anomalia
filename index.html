@@ -49,6 +49,8 @@
       display: inline-flex; align-items: center; gap: 0.5rem; font-family: inherit;
     }
     .btn-nova-rodada:hover { background: #7c3aed; transform: scale(1.02); }
+    .btn-apagar-lista { background:#991b1b; color:#fff; border:none; padding:.6rem 1.1rem; border-radius:30px; font-weight:700; font-size:.9rem; cursor:pointer; transition:.2s; box-shadow:0 2px 8px rgba(0,0,0,.1); display:inline-flex; align-items:center; gap:.5rem; font-family:inherit; }
+    .btn-apagar-lista:hover { background:#7f1d1d; transform:scale(1.02); }
 
     .sub { color: #475569; margin-bottom: 2rem; font-size: 1.1rem; padding-left: 4px; }
     .sub strong { background: #facc15; color: #0f172a; padding: 0.1rem 0.8rem; border-radius: 30px; font-weight: 700; }
@@ -347,6 +349,9 @@
     <div class="header-actions">
       <button class="btn-nova-rodada" id="btnNovaRodada" title="Zera as contribuições do dia mantendo os totais">
         <i class="fas fa-rotate"></i> Nova Rodada
+      </button>
+      <button class="btn-apagar-lista" id="btnApagarLista" title="Apaga todos os membros e dados salvos">
+        <i class="fas fa-trash-can"></i> Apagar lista
       </button>
     </div>
   </div>
@@ -771,6 +776,21 @@
     saveData();
     render();
     alert('✅ Nova rodada iniciada! Contribuições zeradas.');
+  });
+
+  document.getElementById('btnApagarLista').addEventListener('click', () => {
+    if (!players.length) { alert('A lista já está vazia.'); return; }
+    if (!confirm(`⚠️ Apagar toda a lista?\n\nIsso removerá ${players.length} treinador(es), suas contribuições e totais salvos.\n\nEssa ação não pode ser desfeita.`)) return;
+    players = [];
+    localStorage.removeItem('guildaPokemon');
+    filtroNick = '';
+    const busca = document.getElementById('nickSearch');
+    if (busca) busca.value = '';
+    const limpar = document.getElementById('limparBusca');
+    if (limpar) limpar.style.display = 'none';
+    resetForm();
+    render();
+    alert('✅ Toda a lista foi apagada.');
   });
 
   // ============================================================
