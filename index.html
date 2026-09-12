@@ -265,6 +265,12 @@
     .status-badge.reprovado { background: #fee2e2; color: #dc2626; }
     .acoes { display: flex; gap: 0.4rem; flex-wrap: wrap; justify-content: center; }
     .empty-msg { text-align: center; padding: 2rem; color: #94a3b8; }
+    .search-card { background:#fff; border-radius:28px; padding:1.2rem 1.5rem; margin:0 0 1.5rem; box-shadow:0 4px 20px rgba(0,0,0,.04); border:2px solid #e9edf2; }
+    .search-box { display:flex; align-items:center; gap:.7rem; }
+    .search-box i { color:#3b82f6; font-size:1.1rem; }
+    .search-box input { flex:1; padding:.75rem 1rem; border:2px solid #e2e8f0; border-radius:16px; font:inherit; color:#0f172a; background:#f8fafc; }
+    .search-box input:focus { outline:none; border-color:#3b82f6; background:#fff; }
+    .search-hint { margin-top:.45rem; font-size:.75rem; color:#64748b; }
     .total-destaque { font-weight: 800; color: #0f172a; background: #f1f5f9; padding: 0.1rem 0.6rem; border-radius: 20px; }
 
     .dashboard-interativo {
@@ -441,6 +447,15 @@
     </form>
   </div>
 
+  <div class="search-card">
+    <div class="search-box">
+      <i class="fas fa-magnifying-glass"></i>
+      <input type="search" id="nickSearch" placeholder="Buscar treinador pelo nick..." autocomplete="off" />
+      <button type="button" class="btn btn-ghost" id="limparBusca" style="display:none;padding:.55rem .9rem;">Limpar</button>
+    </div>
+    <div class="search-hint" id="searchHint">Digite parte do nick para filtrar a lista.</div>
+  </div>
+
   <div class="table-wrapper">
     <table>
       <thead>
@@ -506,6 +521,7 @@
   let players = [];   // { nick, total, contrib }
   let chartPie, chartBarContrib, chartBarTotal;
   let reviewItems = [];
+  let filtroNick = '';
 
   function loadData() {
     const stored = localStorage.getItem('guildaPokemon');
@@ -518,14 +534,34 @@
         { nick: 'Brock', total: 12650, contrib: 650 }
       ];
     }
-    players.forEach(p => {
-      if (p.total === undefined) p.total = 0;
-      if (p.contrib === undefined) p.contrib = 0;
-    });
+    players = normalizarPlayers(players);
     saveData();
   }
 
-  function saveData() { localStorage.setItem('guildaPokemon', JSON.stringify(players)); }
+  function chaveNick(nick) {
+    return String(nick || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLocaleLowerCase('pt-BR');
+  }
+
+  function normalizarPlayers(lista) {
+    const mapa = new Map();
+    (Array.isArray(lista) ? lista : []).forEach(raw => {
+      const nick = String(raw?.nick || '').trim();
+      if (!nick) return;
+      const total = Math.max(0, Number(raw?.total) || 0);
+      const contrib = Number.isFinite(Number(raw?.contrib)) ? Number(raw.contrib) : 0;
+      const key = chaveNick(nick);
+      if (!mapa.has(key)) mapa.set(key, { nick, total, contrib });
+      else {
+        const atual = mapa.get(key);
+        // Mantém o registro mais atual e soma somente contribuições de registros legados duplicados.
+        atual.total = Math.max(atual.total, total);
+        atual.contrib = Math.max(atual.contrib, contrib);
+      }
+    });
+    return [...mapa.values()];
+  }
+
+  function saveData() { players = normalizarPlayers(players); localStorage.setItem('guildaPokemon', JSON.stringify(players)); }
   function formatarNumero(num) { return Number(num).toLocaleString('pt-BR'); }
   function escapeHtml(str) {
     return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -538,6 +574,7 @@
     const tbody = document.getElementById('tableBody');
     const total = players.length;
     const bateu = players.filter(p => p.contrib >= META).length;
+    const visiveis = players.map((p, i) => ({ p, i })).filter(({p}) => !filtroNick || chaveNick(p.nick).includes(chaveNick(filtroNick)));
     const naoBateu = total - bateu;
     const totalPontos = players.reduce((acc, p) => acc + p.total, 0);
 
@@ -549,8 +586,7 @@
     if (total === 0) {
       tbody.innerHTML = `<tr><td colspan="5" class="empty-msg">Nenhum treinador cadastrado ainda. Adicione o primeiro!</td></tr>`;
     } else {
-      const order = players.map((p, i) => ({ p, i }))
-        .sort((a, b) => (a.p.contrib >= META) - (b.p.contrib >= META));
+      const order = visiveis.sort((a, b) => (a.p.contrib >= META) - (b.p.contrib >= META));
 
       let html = '';
       order.forEach(({ p, i }) => {
@@ -579,9 +615,11 @@
           </tr>
         `;
       });
-      tbody.innerHTML = html;
+      tbody.innerHTML = html || `<tr><td colspan="5" class="empty-msg">Nenhum treinador encontrado para "${escapeHtml(filtroNick)}".</td></tr>`;
     }
 
+    const hint = document.getElementById('searchHint');
+    if (hint) hint.textContent = filtroNick ? `${visiveis.length} treinador(es) encontrado(s).` : 'Digite parte do nick para filtrar a lista.';
     atualizarGraficos();
 
     tbody.querySelectorAll('.btn-edit').forEach(btn => {
@@ -656,7 +694,7 @@
   //  CRUD
   // ============================================================
   function adicionarPlayer(nick, totalAtual) {
-    if (players.some(p => p.nick.toLowerCase() === nick.toLowerCase())) {
+    if (players.some(p => chaveNick(p.nick) === chaveNick(nick))) {
       alert('Esse treinador já está na lista! Use "Editar".');
       return false;
     }
@@ -678,7 +716,7 @@
   }
 
   function salvarEdicao(index, nick, totalAtual) {
-    const exists = players.some((p, i) => i !== index && p.nick.toLowerCase() === nick.toLowerCase());
+    const exists = players.some((p, i) => i !== index && chaveNick(p.nick) === chaveNick(nick));
     if (exists) { alert('Esse nick já está em outro treinador.'); return false; }
     const anterior = players[index].total;
     const diff = totalAtual - anterior;
@@ -964,6 +1002,15 @@ REGRAS IMPORTANTES:
       }
     }
 
+    // Um mesmo membro pode aparecer em mais de um print: uma única linha por nick.
+    const unicos = new Map();
+    reviewItems.forEach(item => {
+      const key = chaveNick(item.nick);
+      const anterior = unicos.get(key);
+      if (!anterior || item.total >= anterior.total) unicos.set(key, item);
+    });
+    reviewItems = [...unicos.values()];
+
     const resumo = document.createElement('div');
     resumo.style.cssText = 'margin-top:.5rem;font-size:.85rem;font-weight:700;color:#475569;';
     resumo.textContent = `${okCount} imagem(ns) OK · ${errCount} erro(s) · ${totalJogadores} treinador(es)`;
@@ -1046,7 +1093,7 @@ REGRAS IMPORTANTES:
       return;
     }
 
-    const idx = players.findIndex(p => p.nick.toLowerCase() === nick.toLowerCase());
+    const idx = players.findIndex(p => chaveNick(p.nick) === chaveNick(nick));
 
     if (idx >= 0) {
       const anterior = players[idx].total;
@@ -1064,7 +1111,7 @@ REGRAS IMPORTANTES:
       if (ok) { infoEl.className = 'res-info ok'; infoEl.textContent = '✔ Bate meta'; }
       else { infoEl.className = 'res-info no'; infoEl.textContent = `✖ Falta ${formatarNumero(META - novoContrib)}`; }
     } else {
-      calcAnt.textContent = '(novo)';
+      calcAnt.textContent = '0';
       calcNovo.textContent = formatarNumero(totalNovo);
       calcDiff.textContent = '+' + formatarNumero(totalNovo);
       calcTotalHoje.textContent = formatarNumero(totalNovo) + ' pts';
@@ -1075,32 +1122,41 @@ REGRAS IMPORTANTES:
   }
 
   function confirmarAdicionar() {
-    let aplicados = 0, novos = 0, atualizados = 0, naoBateram = 0;
+    let aplicados = 0, novos = 0, atualizados = 0, removidos = 0;
+    const vistosNoPrint = new Set();
 
     document.querySelectorAll('#resultadoPanel .res-item').forEach(item => {
-      if (!item.querySelector('.res-check').checked) return;
       const nick = item.querySelector('.res-nick').value.trim();
       const totalNovo = Number(item.querySelector('.res-total').value);
       if (!nick || !Number.isFinite(totalNovo) || totalNovo < 0) return;
+      const key = chaveNick(nick);
+      vistosNoPrint.add(key); // presença no print independe da seleção de atualização
+      if (!item.querySelector('.res-check').checked) return;
+      if (document.querySelectorAll(`#resultadoPanel .res-item .res-nick`).length &&
+          [...document.querySelectorAll('#resultadoPanel .res-item')].filter(x => chaveNick(x.querySelector('.res-nick').value.trim()) === key && x.querySelector('.res-check').checked).indexOf(item) > 0) return;
 
-      const idx = players.findIndex(p => p.nick.toLowerCase() === nick.toLowerCase());
-
+      const idx = players.findIndex(p => chaveNick(p.nick) === key);
       if (idx >= 0) {
-        const anterior = players[idx].total;
+        const anterior = Number(players[idx].total) || 0;
         const diff = totalNovo - anterior;
-        players[idx].contrib += diff;
+        players[idx].contrib = (Number(players[idx].contrib) || 0) + diff;
         players[idx].total = totalNovo;
+        players[idx].nick = nick;
         atualizados++;
-        if (players[idx].contrib < META) naoBateram++;
       } else {
+        // Primeiro print do membro: referência anterior é zero.
         players.push({ nick, total: totalNovo, contrib: totalNovo });
         novos++;
-        if (totalNovo < META) naoBateram++;
       }
       aplicados++;
     });
 
     if (!aplicados) { alert('Nenhum item selecionado.'); return; }
+
+    // O print confirmado representa a lista atual: remove automaticamente quem não existe nele.
+    const antes = players.length;
+    players = players.filter(p => vistosNoPrint.has(chaveNick(p.nick)));
+    removidos = antes - players.length;
 
     saveData();
     render();
@@ -1109,7 +1165,7 @@ REGRAS IMPORTANTES:
     document.getElementById('resultadoPanel').innerHTML = '';
     document.getElementById('progresso').innerHTML = '';
 
-    alert(`✅ Adicionado!\n\n• ${aplicados} treinador(es) processado(s)\n• ${novos} novo(s)\n• ${atualizados} atualizado(s)\n• ${naoBateram} não bateu(ram) 😢`);
+    alert(`✅ Print aplicado!\n\n• ${aplicados} treinador(es) processado(s)\n• ${novos} novo(s)\n• ${atualizados} atualizado(s)\n• ${removidos} removido(s) por não aparecer(em) no print`);
   }
 
   // ============================================================
@@ -1370,6 +1426,19 @@ REGRAS IMPORTANTES:
 
   document.getElementById('playerForm').addEventListener('reset', resetForm);
   document.getElementById('totalAtual').addEventListener('input', calcularContribuicao);
+
+  document.getElementById('nickSearch').addEventListener('input', (e) => {
+    filtroNick = e.target.value.trim();
+    document.getElementById('limparBusca').style.display = filtroNick ? 'inline-flex' : 'none';
+    render();
+  });
+  document.getElementById('limparBusca').addEventListener('click', () => {
+    document.getElementById('nickSearch').value = '';
+    filtroNick = '';
+    document.getElementById('limparBusca').style.display = 'none';
+    render();
+    document.getElementById('nickSearch').focus();
+  });
 
   document.getElementById('btnPDFBateram').addEventListener('click', gerarPDFBateram);
   document.getElementById('btnPDFTop10').addEventListener('click', gerarPDFTop10);
