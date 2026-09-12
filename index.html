@@ -363,7 +363,7 @@
     <div class="resumo-card card-vermelho">
       <div class="mini-pokeball">⚪</div>
       <div class="num" id="totalPlayers">0</div>
-      <div class="label">Total de Treinadores</div>
+      <div class="label">Total de Treinadores (máx. 100)</div>
     </div>
     <div class="resumo-card card-verde">
       <div class="mini-pokeball">⚪</div>
@@ -523,6 +523,7 @@
   //  CONFIG / DADOS
   // ============================================================
   const META = 750;
+  const LIMITE_GUILDA = 100;
   let players = [];   // { nick, total, contrib }
   let chartPie, chartBarContrib, chartBarTotal;
   let reviewItems = [];
@@ -583,7 +584,7 @@
     const naoBateu = total - bateu;
     const totalPontos = players.reduce((acc, p) => acc + p.total, 0);
 
-    document.getElementById('totalPlayers').textContent = total;
+    document.getElementById('totalPlayers').textContent = `${total}/${LIMITE_GUILDA}`;
     document.getElementById('bateramHoje').textContent = bateu;
     document.getElementById('naoBateramHoje').textContent = naoBateu;
     document.getElementById('totalPontos').textContent = formatarNumero(totalPontos);
@@ -591,7 +592,7 @@
     if (total === 0) {
       tbody.innerHTML = `<tr><td colspan="5" class="empty-msg">Nenhum treinador cadastrado ainda. Adicione o primeiro!</td></tr>`;
     } else {
-      const order = visiveis.sort((a, b) => (a.p.contrib >= META) - (b.p.contrib >= META));
+      const order = visiveis.sort((a, b) => chaveNick(a.p.nick).localeCompare(chaveNick(b.p.nick), 'pt-BR'));
 
       let html = '';
       order.forEach(({ p, i }) => {
@@ -699,6 +700,10 @@
   //  CRUD
   // ============================================================
   function adicionarPlayer(nick, totalAtual) {
+    if (players.length >= LIMITE_GUILDA) {
+      alert(`A guilda já atingiu o limite de ${LIMITE_GUILDA} membros. Remova alguém antes de cadastrar um novo.`);
+      return false;
+    }
     if (players.some(p => chaveNick(p.nick) === chaveNick(nick))) {
       alert('Esse treinador já está na lista! Use "Editar".');
       return false;
@@ -1142,18 +1147,29 @@ REGRAS IMPORTANTES:
   }
 
   function confirmarAdicionar() {
-    let aplicados = 0, novos = 0, atualizados = 0, removidos = 0;
+    let aplicados = 0, novos = 0, atualizados = 0, removidos = 0, bloqueados = 0;
+    const itens = [...document.querySelectorAll('#resultadoPanel .res-item')];
     const vistosNoPrint = new Set();
+    const processados = new Set();
 
-    document.querySelectorAll('#resultadoPanel .res-item').forEach(item => {
+    itens.forEach(item => {
+      const nick = item.querySelector('.res-nick').value.trim();
+      const totalNovo = Number(item.querySelector('.res-total').value);
+      if (nick && Number.isFinite(totalNovo) && totalNovo >= 0) vistosNoPrint.add(chaveNick(nick));
+    });
+
+    // Remove primeiro quem saiu; assim a vaga pode ser ocupada por outro membro.
+    const antes = players.length;
+    players = players.filter(p => vistosNoPrint.has(chaveNick(p.nick)));
+    removidos = antes - players.length;
+
+    itens.forEach(item => {
       const nick = item.querySelector('.res-nick').value.trim();
       const totalNovo = Number(item.querySelector('.res-total').value);
       if (!nick || !Number.isFinite(totalNovo) || totalNovo < 0) return;
       const key = chaveNick(nick);
-      vistosNoPrint.add(key); // presença no print independe da seleção de atualização
-      if (!item.querySelector('.res-check').checked) return;
-      if (document.querySelectorAll(`#resultadoPanel .res-item .res-nick`).length &&
-          [...document.querySelectorAll('#resultadoPanel .res-item')].filter(x => chaveNick(x.querySelector('.res-nick').value.trim()) === key && x.querySelector('.res-check').checked).indexOf(item) > 0) return;
+      if (!item.querySelector('.res-check').checked || processados.has(key)) return;
+      processados.add(key);
 
       const idx = players.findIndex(p => chaveNick(p.nick) === key);
       if (idx >= 0) {
@@ -1163,20 +1179,17 @@ REGRAS IMPORTANTES:
         players[idx].total = totalNovo;
         players[idx].nick = nick;
         atualizados++;
-      } else {
-        // Primeiro print do membro: referência anterior é zero.
+      } else if (players.length < LIMITE_GUILDA) {
         players.push({ nick, total: totalNovo, contrib: totalNovo });
         novos++;
+      } else {
+        bloqueados++;
+        return;
       }
       aplicados++;
     });
 
-    if (!aplicados) { alert('Nenhum item selecionado.'); return; }
-
-    // O print confirmado representa a lista atual: remove automaticamente quem não existe nele.
-    const antes = players.length;
-    players = players.filter(p => vistosNoPrint.has(chaveNick(p.nick)));
-    removidos = antes - players.length;
+    if (!aplicados && !removidos) { alert('Nenhum item selecionado.'); return; }
 
     saveData();
     render();
@@ -1185,7 +1198,7 @@ REGRAS IMPORTANTES:
     document.getElementById('resultadoPanel').innerHTML = '';
     document.getElementById('progresso').innerHTML = '';
 
-    alert(`✅ Print aplicado!\n\n• ${aplicados} treinador(es) processado(s)\n• ${novos} novo(s)\n• ${atualizados} atualizado(s)\n• ${removidos} removido(s) por não aparecer(em) no print`);
+    alert(`✅ Print aplicado!\n\n• ${aplicados} treinador(es) processado(s)\n• ${novos} novo(s)\n• ${atualizados} atualizado(s)\n• ${removidos} removido(s) por não aparecer(em) no print${bloqueados ? `\n• ${bloqueados} novo(s) bloqueado(s): limite de ${LIMITE_GUILDA} membros atingido` : ''}`);
   }
 
   // ============================================================
