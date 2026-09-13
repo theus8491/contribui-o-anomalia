@@ -274,6 +274,9 @@
     .search-box input:focus { outline:none; border-color:#3b82f6; background:#fff; }
     .search-hint { margin-top:.45rem; font-size:.75rem; color:#64748b; }
     .total-destaque { font-weight: 800; color: #0f172a; background: #f1f5f9; padding: 0.1rem 0.6rem; border-radius: 20px; }
+    .historico-dia { font-size:.72rem; color:#64748b; margin-top:.25rem; line-height:1.45; }
+    .historico-dia b { color:#334155; }
+    .historico-lista { margin-top:.35rem; padding-left:1rem; font-size:.72rem; color:#64748b; }
 
     .dashboard-interativo {
       margin-top: 2.5rem; display: grid;
@@ -312,6 +315,11 @@
     .btn-pdf-verde:hover { background: #16a34a; }
     .btn-pdf-amarelo { background: #f59e0b; color: #fff; }
     .btn-pdf-amarelo:hover { background: #d97706; }
+    .equilibrio-box { display:flex; align-items:flex-end; gap:.7rem; flex-wrap:wrap; width:100%; margin-top:.8rem; padding:1rem; background:#f8fafc; border:1px solid #e2e8f0; border-radius:16px; }
+    .equilibrio-box label { display:block; width:100%; font-size:.78rem; font-weight:800; color:#475569; text-transform:uppercase; }
+    .equilibrio-box label i { color:#8b5cf6; margin-right:.35rem; }
+    .equilibrio-box input { width:180px; padding:.7rem 1rem; border:2px solid #e2e8f0; border-radius:14px; font:inherit; font-weight:700; }
+    .equilibrio-box input:focus { outline:none; border-color:#8b5cf6; }
 
     .footer {
       margin-top: 2.5rem; padding: 1.5rem 0 0.5rem; text-align: center;
@@ -467,13 +475,14 @@
         <tr>
           <th>Treinador</th>
           <th>Total acumulado</th>
-          <th>Contribuição hoje (soma)</th>
+          <th>Pontos feitos hoje</th>
+          <th>Histórico anterior</th>
           <th>Status Hoje</th>
           <th style="text-align: center;">Ações</th>
         </tr>
       </thead>
       <tbody id="tableBody">
-        <tr><td colspan="5" class="empty-msg">Nenhum treinador cadastrado ainda. Adicione o primeiro!</td></tr>
+        <tr><td colspan="6" class="empty-msg">Nenhum treinador cadastrado ainda. Adicione o primeiro!</td></tr>
       </tbody>
     </table>
   </div>
@@ -491,6 +500,13 @@
       <button type="button" class="btn btn-pdf-vermelho" id="btnPDFNaoBateram">
         <i class="fas fa-triangle-exclamation"></i> PDF — Quem NÃO Bateu
       </button>
+      <div class="equilibrio-box">
+        <label for="metaEquilibrio"><i class="fas fa-scale-balanced"></i> Meta de equilíbrio (total acumulado)</label>
+        <input type="number" id="metaEquilibrio" min="0" step="1" placeholder="Ex.: 15000" />
+        <button type="button" class="btn btn-pdf-verde" id="btnPDFEquilibrio">
+          <i class="fas fa-file-pdf"></i> PDF — Quem precisa atingir
+        </button>
+      </div>
     </div>
   </div>
 
@@ -524,7 +540,7 @@
   // ============================================================
   const META = 750;
   const LIMITE_GUILDA = 100;
-  let players = [];   // { nick, total, contrib }
+  let players = [];   // { nick, total, contrib, historico: [{data, pontos, total}] }
   let chartPie, chartBarContrib, chartBarTotal;
   let reviewItems = [];
   let filtroNick = '';
@@ -555,19 +571,23 @@
       if (!nick) return;
       const total = Math.max(0, Number(raw?.total) || 0);
       const contrib = Number.isFinite(Number(raw?.contrib)) ? Number(raw.contrib) : 0;
+      const historico = Array.isArray(raw?.historico) ? raw.historico.filter(h => h && h.data).map(h => ({ data: String(h.data), pontos: Number(h.pontos) || 0, total: Number(h.total) || 0 })).slice(-30) : [];
       const key = chaveNick(nick);
-      if (!mapa.has(key)) mapa.set(key, { nick, total, contrib });
+      if (!mapa.has(key)) mapa.set(key, { nick, total, contrib, historico });
       else {
         const atual = mapa.get(key);
         // Mantém o registro mais atual e soma somente contribuições de registros legados duplicados.
         atual.total = Math.max(atual.total, total);
         atual.contrib = Math.max(atual.contrib, contrib);
+        atual.historico = [...(atual.historico || []), ...historico].slice(-30);
       }
     });
     return [...mapa.values()];
   }
 
   function saveData() { players = normalizarPlayers(players); localStorage.setItem('guildaPokemon', JSON.stringify(players)); }
+  function dataHoraAtual() { return new Date().toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }); }
+  function registrarHistorico(p) { if (!Array.isArray(p.historico)) p.historico = []; p.historico.push({ data: dataHoraAtual(), pontos: Number(p.contrib) || 0, total: Number(p.total) || 0 }); p.historico = p.historico.slice(-30); }
   function formatarNumero(num) { return Number(num).toLocaleString('pt-BR'); }
   function escapeHtml(str) {
     return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -590,7 +610,7 @@
     document.getElementById('totalPontos').textContent = formatarNumero(totalPontos);
 
     if (total === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" class="empty-msg">Nenhum treinador cadastrado ainda. Adicione o primeiro!</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="empty-msg">Nenhum treinador cadastrado ainda. Adicione o primeiro!</td></tr>`;
     } else {
       const order = visiveis.sort((a, b) => chaveNick(a.p.nick).localeCompare(chaveNick(b.p.nick), 'pt-BR'));
 
@@ -607,9 +627,11 @@
               </div>
             </td>
             <td><span class="total-destaque">${formatarNumero(p.total)}</span></td>
-            <td>
-              <strong style="color:${bateuHoje ? '#16a34a' : '#dc2626'}; font-size: 1.05rem;">${formatarNumero(p.contrib)}</strong>
+            <td><strong style="color:${bateuHoje ? '#16a34a' : '#dc2626'}; font-size: 1.05rem;">+${formatarNumero(p.contrib)}</strong> pts
               ${!bateuHoje ? `<div style="font-size:0.72rem;color:#f97316;font-weight:700;margin-top:2px;">faltam ${formatarNumero(falta)}</div>` : ''}
+            </td>
+            <td><div class="historico-dia"><b>${(p.historico || []).length}</b> registro(s) salvo(s)</div>
+              <details><summary style="cursor:pointer;font-size:.72rem;color:#2563eb;">ver registros</summary><div class="historico-lista">${(p.historico || []).slice().reverse().slice(0,5).map(h => `${escapeHtml(h.data)}: <b>+${formatarNumero(h.pontos)} pts</b> (total ${formatarNumero(h.total)})`).join('<br>') || 'Nenhum registro anterior'}</div></details>
             </td>
             <td>${renderStatus(bateuHoje)}</td>
             <td style="text-align: center;">
@@ -621,7 +643,7 @@
           </tr>
         `;
       });
-      tbody.innerHTML = html || `<tr><td colspan="5" class="empty-msg">Nenhum treinador encontrado para "${escapeHtml(filtroNick)}".</td></tr>`;
+      tbody.innerHTML = html || `<tr><td colspan="6" class="empty-msg">Nenhum treinador encontrado para "${escapeHtml(filtroNick)}".</td></tr>`;
     }
 
     const hint = document.getElementById('searchHint');
@@ -708,7 +730,7 @@
       alert('Esse treinador já está na lista! Use "Editar".');
       return false;
     }
-    players.push({ nick: nick.trim(), total: totalAtual, contrib: totalAtual });
+    players.push({ nick: nick.trim(), total: totalAtual, contrib: 0, historico: [] });
     saveData();
     render();
     return true;
@@ -730,11 +752,8 @@
     if (exists) { alert('Esse nick já está em outro treinador.'); return false; }
     const anterior = players[index].total;
     const diff = totalAtual - anterior;
-    players[index] = {
-      nick: nick.trim(),
-      total: totalAtual,
-      contrib: players[index].contrib + diff
-    };
+    players[index] = { ...players[index], nick: nick.trim(), total: totalAtual, contrib: players[index].contrib + diff };
+    registrarHistorico(players[index]);
     saveData();
     render();
     resetForm();
@@ -777,7 +796,7 @@
   // ============================================================
   document.getElementById('btnNovaRodada').addEventListener('click', () => {
     if (!confirm('🔄 Iniciar nova rodada?\n\nZera a contribuição do dia de TODOS os treinadores (mantém o total acumulado como referência).\n\nUse isso quando virar o dia.')) return;
-    players.forEach(p => { p.contrib = 0; });
+    players.forEach(p => { registrarHistorico(p); p.contrib = 0; });
     saveData();
     render();
     alert('✅ Nova rodada iniciada! Contribuições zeradas.');
@@ -1178,9 +1197,10 @@ REGRAS IMPORTANTES:
         players[idx].contrib = (Number(players[idx].contrib) || 0) + diff;
         players[idx].total = totalNovo;
         players[idx].nick = nick;
+        registrarHistorico(players[idx]);
         atualizados++;
       } else if (players.length < LIMITE_GUILDA) {
-        players.push({ nick, total: totalNovo, contrib: totalNovo });
+        players.push({ nick, total: totalNovo, contrib: 0, historico: [] });
         novos++;
       } else {
         bloqueados++;
@@ -1247,7 +1267,7 @@ REGRAS IMPORTANTES:
       'Relatorio - Todos que Bateram a Meta',
       [22, 163, 74],
       `Data: ${hoje}`,
-      `Meta: ${META} pontos  |  Batedores: ${batedores.length} de ${players.length}`
+      `Meta diária: ${META} pontos  |  Pontos feitos no dia  |  Batedores: ${batedores.length} de ${players.length}`
     );
 
     const pageH = doc.internal.pageSize.getHeight();
@@ -1282,7 +1302,7 @@ REGRAS IMPORTANTES:
       doc.text(`${medalha} ${p.nick}`, margin, y + 2);
 
       doc.setTextColor(22, 163, 74);
-      doc.text(`+${formatarNumero(p.contrib)} pts`, pageW - margin, y + 2, { align: 'right' });
+      doc.text(`Pontos do dia: +${formatarNumero(p.contrib)} pts`, pageW - margin, y + 2, { align: 'right' });
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
@@ -1305,7 +1325,7 @@ REGRAS IMPORTANTES:
       'TOP 10 - Maiores Contribuidores do Dia',
       [245, 158, 11],
       `Data: ${hoje}`,
-      `Meta: ${META} pontos  |  Ranking por contribuicao acumulada de hoje`
+      `Meta diária: ${META} pontos  |  TOP 10 por pontos feitos no dia`
     );
 
     const pageH = doc.internal.pageSize.getHeight();
@@ -1334,7 +1354,7 @@ REGRAS IMPORTANTES:
     doc.setTextColor(146, 64, 14);
     doc.text('#', colPos, y);
     doc.text('TREINADOR', colNome, y);
-    doc.text('CONTRIBUICAO', colContrib, y, { align: 'right' });
+    doc.text('PONTOS DO DIA', colContrib, y, { align: 'right' });
     doc.text('TOTAL', colTotal, y, { align: 'right' });
     doc.text('META', colMeta, y, { align: 'right' });
 
@@ -1389,7 +1409,7 @@ REGRAS IMPORTANTES:
       'Relatorio - Meta Nao Batida',
       [239, 68, 68],
       `Data: ${hoje}`,
-      `Meta: ${META} pontos  |  Nao batedores: ${naoBateram.length} de ${players.length}`
+      `Meta diária: ${META} pontos  |  Pontos feitos no dia  |  Nao batedores: ${naoBateram.length} de ${players.length}`
     );
 
     const pageH = doc.internal.pageSize.getHeight();
@@ -1424,18 +1444,59 @@ REGRAS IMPORTANTES:
       doc.text(p.nick, margin, y + 2);
 
       doc.setTextColor(220, 38, 38);
-      doc.text(`${formatarNumero(p.contrib)} pts`, pageW - margin, y + 2, { align: 'right' });
+      doc.text(`Pontos do dia: ${formatarNumero(p.contrib)} pts`, pageW - margin, y + 2, { align: 'right' });
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
       doc.setTextColor(100, 116, 139);
-      doc.text(`Total: ${formatarNumero(p.total)}  |  Faltam: ${formatarNumero(falta)} pontos`, margin, y + 8);
+      doc.text(`Total acumulado: ${formatarNumero(p.total)}  |  Pontos do dia: ${formatarNumero(p.contrib)}  |  Faltam: ${formatarNumero(falta)}`, margin, y + 8);
 
       y += 16;
     });
 
     rodapePDF(doc, pageW, pageH, margin);
     doc.save(`relatorio_nao_bateram_${hoje.replace(/\//g, '-')}.pdf`);
+  }
+
+  // ---------- PDF 4: META DE EQUILÍBRIO ----------
+  function gerarPDFEquilibrio() {
+    const alvo = Number(document.getElementById('metaEquilibrio').value);
+    if (!Number.isFinite(alvo) || alvo < 0) { alert('Digite uma pontuação válida para a meta de equilíbrio.'); return; }
+
+    const hoje = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const abaixo = players.filter(p => Number(p.total) < alvo).sort((a, b) => a.total - b.total);
+    const { doc, pageW, margin } = criarPDFBase(
+      'Relatorio - Meta de Equilibrio',
+      [139, 92, 246],
+      `Data: ${hoje}`,
+      `Alvo: ${formatarNumero(alvo)} pontos acumulados  |  Pendentes: ${abaixo.length} de ${players.length}`
+    );
+    const pageH = doc.internal.pageSize.getHeight();
+    let y = 50;
+
+    if (!abaixo.length) {
+      doc.setFontSize(14); doc.setTextColor(22, 163, 74);
+      doc.text('Todos os treinadores ja atingiram a meta de equilibrio!', margin, y);
+    } else {
+      doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(109, 40, 217);
+      doc.text(`${abaixo.length} treinador(es) devem atingir ${formatarNumero(alvo)} pontos:`, margin, y);
+      y += 10;
+      abaixo.forEach((p, i) => {
+        if (y > pageH - 30) { doc.addPage(); y = 20; }
+        const falta = alvo - Number(p.total);
+        doc.setFillColor(i % 2 === 0 ? 245 : 255, i % 2 === 0 ? 243 : 255, i % 2 === 0 ? 255 : 255);
+        doc.rect(margin - 2, y - 5, pageW - (margin * 2) + 4, 14, 'F');
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(15, 23, 42);
+        doc.text(`${i + 1}. ${p.nick}`, margin, y + 2);
+        doc.setTextColor(109, 40, 217);
+        doc.text(`Faltam ${formatarNumero(falta)} pts`, pageW - margin, y + 2, { align: 'right' });
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(100, 116, 139);
+        doc.text(`Total atual: ${formatarNumero(p.total)}  |  Deve atingir: ${formatarNumero(alvo)}`, margin, y + 8);
+        y += 16;
+      });
+    }
+    rodapePDF(doc, pageW, pageH, margin);
+    doc.save(`relatorio_meta_equilibrio_${hoje.replace(/\//g, '-')}.pdf`);
   }
 
   // ============================================================
@@ -1476,6 +1537,7 @@ REGRAS IMPORTANTES:
   document.getElementById('btnPDFBateram').addEventListener('click', gerarPDFBateram);
   document.getElementById('btnPDFTop10').addEventListener('click', gerarPDFTop10);
   document.getElementById('btnPDFNaoBateram').addEventListener('click', gerarPDFNao);
+  document.getElementById('btnPDFEquilibrio').addEventListener('click', gerarPDFEquilibrio);
 
   // ============================================================
   //  INIT
