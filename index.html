@@ -329,6 +329,16 @@
     .btn-instalar-app { background:#7c3aed !important; color:#fff !important; display:inline-flex; align-items:center; gap:.5rem; text-decoration:none; font-weight:800; }
     .btn-instalar-app.visivel { display:inline-flex; }
     .btn-instalar-app:hover { background:#6d28d9 !important; }
+    .tutorial-overlay { display:none; position:fixed; inset:0; z-index:9999; background:rgba(15,23,42,.62); padding:1rem; align-items:center; justify-content:center; }
+    .tutorial-overlay.aberto { display:flex; }
+    .tutorial-card { max-width:560px; width:100%; max-height:92vh; overflow:auto; background:#fff; border-radius:24px; padding:1.5rem; box-shadow:0 20px 60px rgba(0,0,0,.3); color:#1e293b; }
+    .tutorial-head { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1rem; }
+    .tutorial-head h2 { font-size:1.25rem; color:#0f172a; }
+    .tutorial-close { border:0; background:#f1f5f9; color:#475569; border-radius:12px; padding:.5rem .75rem; cursor:pointer; font-size:1.1rem; }
+    .tutorial-section { border:1px solid #e2e8f0; border-radius:16px; padding:1rem; margin:.8rem 0; }
+    .tutorial-section h3 { font-size:1rem; color:#7c3aed; margin-bottom:.55rem; }
+    .tutorial-section ol { padding-left:1.35rem; line-height:1.65; }
+    .tutorial-note { background:#fef3c7; color:#92400e; border-radius:12px; padding:.8rem; font-size:.86rem; line-height:1.45; margin-top:1rem; }
     .equilibrio-box input:focus { outline:none; border-color:#8b5cf6; }
 
     .footer {
@@ -371,12 +381,10 @@
       <button class="btn-apagar-lista" id="btnApagarLista" title="Apaga todos os membros e dados salvos">
         <i class="fas fa-trash-can"></i> Apagar lista
       </button>
-      <button type="button" class="btn btn-instalar-app" id="btnInstalarApp" title="Instalar este sistema como aplicativo">
-        <i class="fas fa-mobile-screen-button"></i> Instalar o app
+      <button type="button" class="btn btn-instalar-app" id="btnInstalarApp" title="Ver como instalar este sistema">
+        <i class="fas fa-circle-question"></i> Como instalar o app
       </button>
-      <a class="btn btn-azul" href="./guilda-anomalia-app.zip" download="guilda-anomalia-app.zip" title="Baixa o app completo em ZIP">
-        <i class="fas fa-download"></i> Baixar o app
-      </a>
+
     </div>
   </div>
   <p class="sub">
@@ -1583,18 +1591,19 @@ REGRAS IMPORTANTES:
       if (botaoInstalarApp) botaoInstalarApp.classList.add('visivel');
     });
 
-    if (botaoInstalarApp) {
-      botaoInstalarApp.addEventListener('click', async () => {
-        if (!eventoInstalacaoPWA) {
-          alert('Para instalar: abra este sistema pelo Chrome usando HTTPS e procure "Instalar aplicativo" no menu ⋮.');
-          return;
-        }
-        eventoInstalacaoPWA.prompt();
-        await eventoInstalacaoPWA.userChoice;
-        eventoInstalacaoPWA = null;
-        botaoInstalarApp.classList.remove('visivel');
-      });
+    function prepararTutorialInstalacao() {
+      const tutorialInstalacao = document.getElementById('tutorialInstalacao');
+      const fecharTutorial = document.getElementById('fecharTutorial');
+      if (botaoInstalarApp && tutorialInstalacao && fecharTutorial) {
+        botaoInstalarApp.addEventListener('click', () => tutorialInstalacao.classList.add('aberto'));
+        fecharTutorial.addEventListener('click', () => tutorialInstalacao.classList.remove('aberto'));
+        tutorialInstalacao.addEventListener('click', (evento) => {
+          if (evento.target === tutorialInstalacao) tutorialInstalacao.classList.remove('aberto');
+        });
+      }
     }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', prepararTutorialInstalacao);
+    else prepararTutorialInstalacao();
 
     window.addEventListener('appinstalled', () => {
       if (botaoInstalarApp) botaoInstalarApp.classList.remove('visivel');
@@ -1604,6 +1613,35 @@ REGRAS IMPORTANTES:
       window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js'));
     }
   </script>
+
+  <div class="tutorial-overlay" id="tutorialInstalacao" role="dialog" aria-modal="true" aria-labelledby="tituloTutorial">
+    <div class="tutorial-card">
+      <div class="tutorial-head">
+        <h2 id="tituloTutorial"><i class="fas fa-mobile-screen-button" style="color:#7c3aed;"></i> Como instalar o app</h2>
+        <button type="button" class="tutorial-close" id="fecharTutorial" aria-label="Fechar">&times;</button>
+      </div>
+      <p>Instale este sistema na tela inicial para abrir como aplicativo, sem precisar procurar o site toda vez.</p>
+      <div class="tutorial-section">
+        <h3><i class="fab fa-android"></i> Android — Chrome</h3>
+        <ol>
+          <li>Abra o sistema no <b>Google Chrome</b> usando o link do app.</li>
+          <li>Toque no menu de três pontos <b>⋮</b>.</li>
+          <li>Escolha <b>Instalar aplicativo</b> ou <b>Adicionar à tela inicial</b>.</li>
+          <li>Confirme em <b>Instalar</b> ou <b>Adicionar</b>.</li>
+        </ol>
+      </div>
+      <div class="tutorial-section">
+        <h3><i class="fab fa-apple"></i> iPhone — Safari</h3>
+        <ol>
+          <li>Abra o sistema no <b>Safari</b>.</li>
+          <li>Toque no botão <b>Compartilhar</b> (quadrado com seta para cima).</li>
+          <li>Role o menu e toque em <b>Adicionar à Tela de Início</b>.</li>
+          <li>Toque em <b>Adicionar</b> para confirmar.</li>
+        </ol>
+      </div>
+      <div class="tutorial-note"><b>Importante:</b> o sistema precisa ser aberto por um link do navegador, de preferência com <b>HTTPS</b>. Não abra somente o arquivo index.html pelo gerenciador de arquivos do celular.</div>
+    </div>
+  </div>
 
 </body>
 </html>
