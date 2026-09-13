@@ -326,6 +326,9 @@
     .equilibrio-box label { display:block; width:100%; font-size:.78rem; font-weight:800; color:#475569; text-transform:uppercase; }
     .equilibrio-box label i { color:#8b5cf6; margin-right:.35rem; }
     .equilibrio-box input { width:180px; padding:.7rem 1rem; border:2px solid #e2e8f0; border-radius:14px; font:inherit; font-weight:700; }
+    .btn-instalar-app { background:#7c3aed !important; color:#fff !important; display:inline-flex; align-items:center; gap:.5rem; text-decoration:none; font-weight:800; }
+    .btn-instalar-app.visivel { display:inline-flex; }
+    .btn-instalar-app:hover { background:#6d28d9 !important; }
     .equilibrio-box input:focus { outline:none; border-color:#8b5cf6; }
 
     .footer {
@@ -368,6 +371,12 @@
       <button class="btn-apagar-lista" id="btnApagarLista" title="Apaga todos os membros e dados salvos">
         <i class="fas fa-trash-can"></i> Apagar lista
       </button>
+      <button type="button" class="btn btn-instalar-app" id="btnInstalarApp" title="Instalar este sistema como aplicativo">
+        <i class="fas fa-mobile-screen-button"></i> Instalar o app
+      </button>
+      <a class="btn btn-azul" href="./guilda-anomalia-app.zip" download="guilda-anomalia-app.zip" title="Baixa o app completo em ZIP">
+        <i class="fas fa-download"></i> Baixar o app
+      </a>
     </div>
   </div>
   <p class="sub">
@@ -1565,6 +1574,32 @@ REGRAS IMPORTANTES:
 </script>
 
   <script>
+    let eventoInstalacaoPWA = null;
+    const botaoInstalarApp = document.getElementById('btnInstalarApp');
+
+    window.addEventListener('beforeinstallprompt', (evento) => {
+      evento.preventDefault();
+      eventoInstalacaoPWA = evento;
+      if (botaoInstalarApp) botaoInstalarApp.classList.add('visivel');
+    });
+
+    if (botaoInstalarApp) {
+      botaoInstalarApp.addEventListener('click', async () => {
+        if (!eventoInstalacaoPWA) {
+          alert('Para instalar: abra este sistema pelo Chrome usando HTTPS e procure "Instalar aplicativo" no menu ⋮.');
+          return;
+        }
+        eventoInstalacaoPWA.prompt();
+        await eventoInstalacaoPWA.userChoice;
+        eventoInstalacaoPWA = null;
+        botaoInstalarApp.classList.remove('visivel');
+      });
+    }
+
+    window.addEventListener('appinstalled', () => {
+      if (botaoInstalarApp) botaoInstalarApp.classList.remove('visivel');
+    });
+
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js'));
     }
