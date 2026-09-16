@@ -326,6 +326,8 @@
     .equilibrio-box label { display:block; width:100%; font-size:.78rem; font-weight:800; color:#475569; text-transform:uppercase; }
     .equilibrio-box label i { color:#8b5cf6; margin-right:.35rem; }
     .equilibrio-box input { width:180px; padding:.7rem 1rem; border:2px solid #e2e8f0; border-radius:14px; font:inherit; font-weight:700; }
+    .guildas-card{background:#fff;border:2px solid #e9edf2;border-radius:28px;padding:1.2rem 1.5rem;margin-bottom:1.5rem;box-shadow:0 4px 20px rgba(0,0,0,.04)}
+    .guildas-row{display:flex;gap:.7rem;align-items:flex-end;flex-wrap:wrap}.guildas-row label{display:block;width:100%;font-size:.75rem;font-weight:800;text-transform:uppercase;color:#475569}.guildas-row select,.guildas-row input{padding:.7rem 1rem;border:2px solid #e2e8f0;border-radius:14px;font:inherit;font-weight:700;background:#f8fafc}.guildas-row select{min-width:220px}.btn-backup{background:#0f766e;color:#fff}.btn-restaurar{background:#64748b;color:#fff}.comparacao-card{background:#fff;border:2px solid #dbeafe;border-radius:28px;padding:1.3rem 1.5rem;margin-top:2rem}.correcao-box{margin-top:.8rem;padding:.7rem .9rem;border-radius:14px;background:#fff7ed;color:#9a3412;font-size:.82rem}
     .btn-instalar-app { background:#7c3aed !important; color:#fff !important; display:inline-flex; align-items:center; gap:.5rem; text-decoration:none; font-weight:800; }
     .btn-instalar-app.visivel { display:inline-flex; }
     .btn-instalar-app:hover { background:#6d28d9 !important; }
@@ -391,6 +393,8 @@
     <i class="fas fa-flag-checkered" style="color:#ef4444;"></i> Cada foto enviada <b>ACUMULA</b> os pontos: a diferença entre o total novo e o antigo é somada à contribuição do dia.
   </p>
 
+  <div class="guildas-card"><div class="guildas-row"><label for="guildaSelect"><i class="fas fa-users"></i> Guilda atual</label><select id="guildaSelect"></select><input id="novaGuildaNome" placeholder="Nome da nova guilda" /><button type="button" class="btn btn-azul" id="btnNovaGuilda"><i class="fas fa-plus"></i> Nova guilda</button><button type="button" class="btn btn-excluir" id="btnExcluirGuilda"><i class="fas fa-trash"></i> Apagar guilda</button><button type="button" class="btn btn-backup" id="btnBackup"><i class="fas fa-download"></i> Fazer backup</button><button type="button" class="btn btn-restaurar" id="btnRestaurar"><i class="fas fa-upload"></i> Importar backup</button><button type="button" class="btn btn-restaurar" id="btnRestaurarAnterior"><i class="fas fa-clock-rotate-left"></i> Restaurar última versão</button><input type="file" id="backupInput" accept="application/json" hidden /></div><div style="margin-top:.55rem;font-size:.78rem;color:#64748b">Sua guilda principal fica selecionada por padrão. Cada guilda possui jogadores e históricos separados.</div></div>
+
   <div class="resumo">
     <div class="resumo-card card-vermelho">
       <div class="mini-pokeball">⚪</div>
@@ -411,6 +415,7 @@
       <div class="mini-pokeball">⚪</div>
       <div class="num" id="totalPontos">0</div>
       <div class="label">Total acumulado</div>
+      <button type="button" class="btn btn-ghost" id="btnEditarTotalGuilda" style="margin-top:.7rem;font-size:.72rem;padding:.35rem .7rem;position:relative;z-index:2;"><i class="fas fa-pen"></i> Editar valor real</button>
     </div>
   </div>
 
@@ -468,7 +473,7 @@
           <input type="number" id="totalAnterior" readonly />
         </div>
         <div class="form-group">
-          <label><i class="fas fa-arrow-up"></i> Total atual</label>
+          <label><i class="fas fa-arrow-up"></i> Novo total acumulado real</label>
           <input type="number" id="totalAtual" placeholder="Ex: 10820" required min="0" step="1" />
         </div>
         <div class="form-group" style="flex: 0 0 auto; min-width: 130px;">
@@ -480,6 +485,7 @@
       <div id="contribDisplay" style="margin-top: 10px; font-weight: 600; color: #2563eb; display: none;">
         Contribuição deste upload: <span id="contribCalculada">0</span> pontos
       </div>
+      <div class="correcao-box"><label><input type="checkbox" id="corrigirSaldoReal" /> Corrigir saldo real sem contar a alteração como pontos do dia</label></div>
       <input type="hidden" id="editIndex" value="-1" />
     </form>
   </div>
@@ -549,6 +555,8 @@
     </div>
   </div>
 
+  <div class="comparacao-card"><h3><i class="fas fa-ranking-star"></i> Comparação entre guildas</h3><div id="comparacaoGuildas">Crie outra guilda para comparar o desempenho.</div><div class="chart-wrapper" style="height:280px;margin-top:1.2rem;"><canvas id="chartComparacaoGuildas"></canvas></div><div id="sugestaoGuilda" style="margin-top:1rem;padding:1rem;border-radius:16px;background:#eef2ff;color:#3730a3;font-weight:700;line-height:1.5;">A sugestão aparecerá quando houver pelo menos duas guildas.</div><button type="button" class="btn btn-azul" id="btnAnalisarMetaIA" style="margin-top:.8rem;"><i class="fas fa-wand-magic-sparkles"></i> Analisar gráfico e sugerir meta com IA</button><button type="button" class="btn btn-pdf-amarelo" id="btnPDFComparacao" style="margin-top:.8rem;"><i class="fas fa-file-pdf"></i> PDF — Estatísticas e diferenças</button><div id="resultadoMetaIA" style="display:none;margin-top:.8rem;padding:1rem;border-radius:16px;background:#ecfdf5;color:#166534;line-height:1.5;"></div></div>
+
   <div class="footer">
     <p>
       <i class="fas fa-info-circle" style="margin-right: 6px;"></i>
@@ -564,24 +572,59 @@
   // ============================================================
   const META = 750;
   const LIMITE_GUILDA = 100;
-  let players = [];   // { nick, total, contrib, historico: [{data, pontos, total}] }
+  let players = []; let guildas = {}; let guildaAtiva = 'principal';   // dados da guilda atual
+  let chartComparacaoGuildas;
   let chartPie, chartBarContrib, chartBarTotal;
   let reviewItems = [];
   let filtroNick = '';
 
   function loadData() {
-    const stored = localStorage.getItem('guildaPokemon');
-    if (stored) {
-      try { players = JSON.parse(stored); } catch(e) { players = []; }
-    } else {
-      players = [
-        { nick: 'Ash', total: 10820, contrib: 820 },
-        { nick: 'Misty', total: 9410, contrib: 910 },
-        { nick: 'Brock', total: 12650, contrib: 650 }
-      ];
-    }
-    players = normalizarPlayers(players);
-    saveData();
+    const raw=localStorage.getItem('guildasPokemon');
+    if(raw){try{const x=JSON.parse(raw);guildas=x.guildas||{};guildaAtiva=x.ativa||'principal';}catch(e){guildas={};}}
+    if(!Object.keys(guildas).length){let antigos=[];try{antigos=JSON.parse(localStorage.getItem('guildaPokemon')||'[]');}catch(e){};if(!antigos.length) antigos=[{nick:'Ash',total:10820,contrib:820},{nick:'Misty',total:9410,contrib:910},{nick:'Brock',total:12650,contrib:650}];guildas={principal:{nome:'Minha Guilda (principal)',players:normalizarPlayers(antigos),criadaEm:dataHoraAtual()}};guildaAtiva='principal';}
+    if(!guildas[guildaAtiva]) guildaAtiva=Object.keys(guildas)[0]; players=normalizarPlayers(guildas[guildaAtiva].players||[]); atualizarSeletorGuildas(); saveData();
+  }
+
+  function totalGuilda(g){const soma=(g.players||[]).reduce((a,p)=>a+(Number(p.total)||0),0);return Number.isFinite(Number(g.totalReal))?Number(g.totalReal):soma;}
+  function editarTotalGuilda(){const atual=totalGuilda(guildas[guildaAtiva]);const valor=prompt(`Informe o total acumulado real da guilda "${guildas[guildaAtiva].nome}":`,String(atual));if(valor===null)return;const n=Number(valor);if(!Number.isFinite(n)||n<0)return alert('Digite um valor válido.');guildas[guildaAtiva].totalReal=Math.round(n);saveData();render();atualizarComparacao();alert(`Total acumulado real ajustado para ${formatarNumero(n)}.`);}
+  function saveData(){const anterior=localStorage.getItem('guildasPokemon');if(anterior)localStorage.setItem('guildasPokemon_ultimoBackup',anterior);if(guildas[guildaAtiva])guildas[guildaAtiva].players=normalizarPlayers(players);localStorage.setItem('guildasPokemon',JSON.stringify({guildas,ativa:guildaAtiva}));localStorage.setItem('guildaPokemon',JSON.stringify(players));if(document.getElementById('comparacaoGuildas'))atualizarComparacao();}
+  function atualizarSeletorGuildas(){const e=document.getElementById('guildaSelect');if(e){e.innerHTML=Object.entries(guildas).map(([id,g])=>`<option value="${escapeHtml(id)}">${escapeHtml(g.nome)}</option>`).join('');e.value=guildaAtiva;}}
+  function inicializarComparacao(){const c=document.getElementById('chartComparacaoGuildas');if(c)chartComparacaoGuildas=new Chart(c.getContext('2d'),{type:'bar',data:{labels:[],datasets:[{label:'Pontos feitos no dia',data:[],backgroundColor:['#ef4444','#3b82f6','#22c55e','#f59e0b','#8b5cf6'],borderRadius:8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'Pontos no dia'}}}}});}
+  function atualizarComparacao(){
+    const e=document.getElementById('comparacaoGuildas'); if(!e)return;
+    const a=Object.entries(guildas).map(([id,g])=>{const p=g.players||[];return {id,nome:g.nome,m:p.length,d:p.reduce((x,q)=>x+(+q.contrib||0),0),t:totalGuilda(g),b:p.filter(q=>q.contrib>=META).length};}).sort((x,y)=>y.d-x.d);
+    if(chartComparacaoGuildas){chartComparacaoGuildas.data.labels=a.map(x=>x.nome);chartComparacaoGuildas.data.datasets[0].data=a.map(x=>x.d);chartComparacaoGuildas.data.datasets[0].backgroundColor=a.map(x=>x.id==='principal'?'#ef4444':'#3b82f6');chartComparacaoGuildas.update();}
+    const minha=a.find(x=>x.id==='principal')||{d:0,t:0};
+    if(a.length<2){e.textContent='Crie outra guilda para comparar o desempenho.';const sug=document.getElementById('sugestaoGuilda');if(sug)sug.textContent='A sugestão aparecerá quando houver pelo menos duas guildas.';return;}
+    e.innerHTML='<div style="overflow:auto"><table><thead><tr><th>Guilda</th><th>Membros</th><th>Pontos hoje</th><th>Diferença hoje</th><th>Total acumulado</th><th>Diferença acumulada</th><th>Bateram meta</th></tr></thead><tbody>'+a.map(x=>{const dd=x.d-minha.d,dt=x.t-minha.t;return `<tr><td><b>${escapeHtml(x.nome)}</b></td><td>${x.m}</td><td><b>+${formatarNumero(x.d)}</b></td><td style="color:${dd>=0?'#16a34a':'#dc2626'};font-weight:700">${dd>=0?'+':''}${formatarNumero(dd)}</td><td>${formatarNumero(x.t)}</td><td style="color:${dt>=0?'#16a34a':'#dc2626'};font-weight:700">${dt>=0?'+':''}${formatarNumero(dt)}</td><td>${x.b}</td></tr>`;}).join('')+'</tbody></table></div>';
+    const sug=document.getElementById('sugestaoGuilda'); const rivais=a.filter(x=>x.id!=='principal'); const lider=rivais[0]; if(!lider){if(sug)sug.textContent='Não há outra guilda para ultrapassar.';return;}
+    const alvo=Math.min(2500,Math.max(META,lider.d+1)); const falta=Math.max(0,alvo-minha.d); if(sug)sug.innerHTML=falta>0?`<i class="fas fa-lightbulb"></i> <b>Sugestão:</b> para a guilda principal ultrapassar <b>${escapeHtml(lider.nome)}</b> hoje, faça pelo menos <b>${formatarNumero(alvo)} pontos</b>. Diferença hoje: <b>${formatarNumero(lider.d-minha.d)} pontos</b>. Diferença acumulada: <b>${formatarNumero(lider.t-minha.t)} pontos</b>.`:`<i class="fas fa-trophy"></i> A guilda principal já está na frente de <b>${escapeHtml(lider.nome)}</b> hoje.`;
+  }
+
+  function gerarPDFComparacao(){
+    const hoje=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}); const lista=Object.entries(guildas).map(([id,g])=>{const p=g.players||[];return {id,nome:g.nome,m:p.length,d:p.reduce((a,x)=>a+(+x.contrib||0),0),t:totalGuilda(g),b:p.filter(x=>x.contrib>=META).length};}).sort((a,b)=>b.d-a.d); const principal=lista.find(x=>x.id==='principal')||{d:0,t:0};
+    const {doc,pageW,margin}=criarPDFBase('Comparacao entre Guildas',[37,99,235],`Data: ${hoje}`,`Pontos do dia e totais acumulados | Guildas: ${lista.length}`); const pageH=doc.internal.pageSize.getHeight(); let y=50;
+    doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(30,64,175);doc.text('Estatisticas e diferencas em relacao a guilda principal:',margin,y);y+=10;
+    lista.forEach((g,i)=>{if(y>pageH-35){doc.addPage();y=20;}const dd=g.d-principal.d,dt=g.t-principal.t;doc.setFillColor(i%2?255:239, i%2?255:246, i%2?255:255);doc.rect(margin-2,y-5,pageW-margin*2+4,18,'F');doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(15,23,42);doc.text(g.nome,margin,y+2);doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(71,85,105);doc.text(`Membros: ${g.m} | Bateram meta: ${g.b}`,margin,y+8);doc.text(`Hoje: +${formatarNumero(g.d)} | Dif. hoje: ${dd>=0?'+':''}${formatarNumero(dd)} | Total: ${formatarNumero(g.t)} | Dif. acumulada: ${dt>=0?'+':''}${formatarNumero(dt)}`,margin,y+14);y+=22;});
+    rodapePDF(doc,pageW,pageH,margin);doc.save(`relatorio_comparacao_guildas_${hoje.replace(/\//g,'-')}.pdf`);
+  }
+  function trocarGuilda(id){saveData();guildaAtiva=id;players=normalizarPlayers(guildas[id].players||[]);atualizarSeletorGuildas();resetForm();render();atualizarComparacao();}
+  function criarGuilda(){const n=document.getElementById('novaGuildaNome').value.trim();if(!n)return alert('Digite o nome da guilda.');const id='guilda_'+Date.now();guildas[id]={nome:n,players:[],criadaEm:dataHoraAtual()};document.getElementById('novaGuildaNome').value='';trocarGuilda(id);}
+  function apagarGuilda(){if(guildaAtiva==='principal')return alert('A guilda principal não pode ser apagada.');if(!confirm('Apagar esta guilda? Faça um backup antes se quiser preservar os dados.'))return;delete guildas[guildaAtiva];guildaAtiva='principal';players=normalizarPlayers(guildas.principal.players||[]);atualizarSeletorGuildas();saveData();render();atualizarComparacao();}
+  function fazerBackup(){const b=new Blob([JSON.stringify({versao:2,exportadoEm:dataHoraAtual(),guildas,ativa:guildaAtiva},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='backup_guildas_'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(a.href);}
+  function restaurarBackup(f){const r=new FileReader();r.onload=()=>{try{const x=JSON.parse(r.result);if(!x.guildas)throw Error();if(!confirm('Restaurar substituirá os dados atuais. Continuar?'))return;guildas=x.guildas;guildaAtiva=x.ativa&&guildas[x.ativa]?x.ativa:Object.keys(guildas)[0];players=normalizarPlayers(guildas[guildaAtiva].players||[]);atualizarSeletorGuildas();saveData();render();atualizarComparacao();alert('Backup restaurado.');}catch(e){alert('Backup inválido.');}};r.readAsText(f);}
+  function restaurarUltimaVersao(){const raw=localStorage.getItem('guildasPokemon_ultimoBackup');if(!raw)return alert('Ainda não existe uma versão anterior salva.');if(!confirm('Restaurar a última versão salva? As alterações atuais serão substituídas.'))return;try{const x=JSON.parse(raw);guildas=x.guildas;guildaAtiva=x.ativa&&guildas[x.ativa]?x.ativa:Object.keys(guildas)[0];players=normalizarPlayers(guildas[guildaAtiva].players||[]);localStorage.setItem('guildasPokemon',raw);localStorage.setItem('guildaPokemon',JSON.stringify(players));atualizarSeletorGuildas();render();atualizarComparacao();alert('Última versão restaurada.');}catch(e){alert('Não foi possível restaurar a versão anterior.');}}
+  async function analisarMetaComIA(){
+    const saida=document.getElementById('resultadoMetaIA'); const key=getApiKey();
+    if(!key){saida.style.display='block';saida.innerHTML='<b>Configure a API Key do Gemini acima</b> antes de pedir a análise da IA.';return;}
+    const dados=Object.values(guildas).map(g=>{const p=g.players||[];return {guilda:g.nome,pontosHoje:p.reduce((a,x)=>a+(Number(x.contrib)||0),0),total:p.reduce((a,x)=>a+(Number(x.total)||0),0),membros:p.length};});
+    saida.style.display='block';saida.textContent='Analisando o gráfico e o desempenho das guildas...';
+    const prompt=`Você é um analista de desempenho de guildas. Avalie estes dados de pontos feitos hoje: ${JSON.stringify(dados)}. A guilda principal é "${guildas.principal?.nome||'Minha Guilda (principal)'}". Recomende UMA meta diária para a guilda principal ultrapassar a melhor guilda, mas o valor deve obrigatoriamente ficar entre 750 e 2500 pontos. Considere os pontos atuais, a diferença para a líder e uma meta desafiadora porém realista. Responda SOMENTE JSON válido: {"meta":numero,"motivo":"texto curto em português","faltaHoje":numero}.`;
+    try{
+      const model=getModel(); const url=`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+      const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:.2,maxOutputTokens:400}})});
+      if(!res.ok)throw Error(`Erro HTTP ${res.status}`); const data=await res.json(); let text=data?.candidates?.[0]?.content?.parts?.map(p=>p.text).join('')||''; text=text.replace(/^```(?:json)?\s*/i,'').replace(/```\s*$/,'').trim(); const r=JSON.parse(text); const meta=Math.min(2500,Math.max(750,Math.round(Number(r.meta)||750))); const falta=Math.max(0,Number(r.faltaHoje)||0); saida.innerHTML=`<b>Meta recomendada pela IA: ${formatarNumero(meta)} pontos</b><br>${escapeHtml(r.motivo||'Meta calculada com base no desempenho atual das guildas.')}<br><small>Para alcançar essa meta hoje, ainda faltariam ${formatarNumero(falta)} pontos.</small>`;
+    }catch(err){saida.innerHTML=`<b>Não foi possível analisar agora.</b><br><small>${escapeHtml(err.message)}</small>`;}
   }
 
   function chaveNick(nick) {
@@ -609,7 +652,6 @@
     return [...mapa.values()];
   }
 
-  function saveData() { players = normalizarPlayers(players); localStorage.setItem('guildaPokemon', JSON.stringify(players)); }
   function dataHoraAtual() { return new Date().toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }); }
   function registrarHistorico(p) { if (!Array.isArray(p.historico)) p.historico = []; p.historico.push({ data: dataHoraAtual(), pontos: Number(p.contrib) || 0, total: Number(p.total) || 0 }); p.historico = p.historico.slice(-30); }
   function formatarNumero(num) { return Number(num).toLocaleString('pt-BR'); }
@@ -626,7 +668,7 @@
     const bateu = players.filter(p => p.contrib >= META).length;
     const visiveis = players.map((p, i) => ({ p, i })).filter(({p}) => !filtroNick || chaveNick(p.nick).includes(chaveNick(filtroNick)));
     const naoBateu = total - bateu;
-    const totalPontos = players.reduce((acc, p) => acc + p.total, 0);
+    const totalPontos = totalGuilda(guildas[guildaAtiva] || { players });
 
     document.getElementById('totalPlayers').textContent = `${total}/${LIMITE_GUILDA}`;
     document.getElementById('bateramHoje').textContent = bateu;
@@ -660,7 +702,7 @@
             <td>${renderStatus(bateuHoje)}</td>
             <td style="text-align: center;">
               <div class="acoes">
-                <button class="btn-edit" data-index="${i}"><i class="fas fa-pen"></i> Editar</button>
+                <button class="btn-edit" data-index="${i}"><i class="fas fa-pen"></i> Editar saldo</button>
                 <button class="btn-excluir" data-index="${i}"><i class="fas fa-trash"></i> Excluir</button>
               </div>
             </td>
@@ -673,6 +715,7 @@
     const hint = document.getElementById('searchHint');
     if (hint) hint.textContent = filtroNick ? `${visiveis.length} treinador(es) encontrado(s).` : 'Digite parte do nick para filtrar a lista.';
     atualizarGraficos();
+    atualizarComparacao();
 
     tbody.querySelectorAll('.btn-edit').forEach(btn => {
       btn.addEventListener('click', function() { editarPlayer(parseInt(this.dataset.index, 10)); });
@@ -774,10 +817,11 @@
   function salvarEdicao(index, nick, totalAtual) {
     const exists = players.some((p, i) => i !== index && chaveNick(p.nick) === chaveNick(nick));
     if (exists) { alert('Esse nick já está em outro treinador.'); return false; }
-    const anterior = players[index].total;
+    const anterior = Number(players[index].total)||0;
     const diff = totalAtual - anterior;
-    players[index] = { ...players[index], nick: nick.trim(), total: totalAtual, contrib: players[index].contrib + diff };
-    registrarHistorico(players[index]);
+    const corrigir = document.getElementById('corrigirSaldoReal')?.checked;
+    players[index] = { ...players[index], nick:nick.trim(), total:totalAtual, contrib:corrigir ? (Number(players[index].contrib)||0) : (Number(players[index].contrib)||0)+diff };
+    if(!corrigir) registrarHistorico(players[index]);
     saveData();
     render();
     resetForm();
@@ -799,6 +843,7 @@
     document.getElementById('editIndex').value = '-1';
     document.getElementById('submitBtn').innerHTML = '<i class="fas fa-plus"></i> Adicionar';
     document.getElementById('contribDisplay').style.display = 'none';
+    const c=document.getElementById('corrigirSaldoReal'); if(c)c.checked=false;
   }
 
   function calcularContribuicao() {
@@ -1201,10 +1246,18 @@ REGRAS IMPORTANTES:
       if (nick && Number.isFinite(totalNovo) && totalNovo >= 0) vistosNoPrint.add(chaveNick(nick));
     });
 
-    // Remove primeiro quem saiu; assim a vaga pode ser ocupada por outro membro.
-    const antes = players.length;
-    players = players.filter(p => vistosNoPrint.has(chaveNick(p.nick)));
-    removidos = antes - players.length;
+    // Jogadores ausentes no print não são removidos automaticamente.
+    const ausentes = players.filter(p => !vistosNoPrint.has(chaveNick(p.nick)));
+    let confirmarRemocao = false;
+    if (ausentes.length) {
+      const nomes = ausentes.map(p => `• ${p.nick}`).join('\n');
+      confirmarRemocao = confirm(`⚠️ Estes jogadores não foram identificados neste print:\n\n${nomes}\n\nDeseja realmente apagar esses jogadores da guilda?\n\nCancelar mantém todos eles salvos.`);
+      if (confirmarRemocao) {
+        const antes = players.length;
+        players = players.filter(p => vistosNoPrint.has(chaveNick(p.nick)));
+        removidos = antes - players.length;
+      }
+    }
 
     itens.forEach(item => {
       const nick = item.querySelector('.res-nick').value.trim();
@@ -1562,6 +1615,16 @@ REGRAS IMPORTANTES:
   document.getElementById('btnPDFTop10').addEventListener('click', gerarPDFTop10);
   document.getElementById('btnPDFNaoBateram').addEventListener('click', gerarPDFNao);
   document.getElementById('btnPDFEquilibrio').addEventListener('click', gerarPDFEquilibrio);
+  document.getElementById('btnEditarTotalGuilda').addEventListener('click', editarTotalGuilda);
+  document.getElementById('btnAnalisarMetaIA').addEventListener('click', analisarMetaComIA);
+  document.getElementById('btnPDFComparacao').addEventListener('click', gerarPDFComparacao);
+  document.getElementById('guildaSelect').addEventListener('change',e=>trocarGuilda(e.target.value));
+  document.getElementById('btnNovaGuilda').addEventListener('click',criarGuilda);
+  document.getElementById('btnExcluirGuilda').addEventListener('click',apagarGuilda);
+  document.getElementById('btnBackup').addEventListener('click',fazerBackup);
+  document.getElementById('btnRestaurar').addEventListener('click',()=>document.getElementById('backupInput').click());
+  document.getElementById('btnRestaurarAnterior').addEventListener('click',restaurarUltimaVersao);
+  document.getElementById('backupInput').addEventListener('change',e=>{if(e.target.files[0])restaurarBackup(e.target.files[0]);e.target.value='';});
 
   // ============================================================
   //  INIT
@@ -1570,8 +1633,9 @@ REGRAS IMPORTANTES:
 
   function boot() {
     inicializarGraficos();
+    inicializarComparacao();
     render();
-    initGeminiConfig();
+    initGeminiConfig(); atualizarSeletorGuildas(); atualizarComparacao();
   }
 
   if (document.readyState === 'complete' || document.readyState === 'interactive') {
